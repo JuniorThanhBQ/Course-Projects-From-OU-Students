@@ -1,0 +1,17 @@
+{%extends 'layout/base.html'%}
+
+{%block title%}Chi tiết sản phẩm{%endblock%}
+
+{%block content%}
+
+<div class="row mt-3">
+    <div class="col-md-5 col-12">
+        <img src="{{prod.image}}" class="img-fluid">
+    </div>
+    <div class="col-md-7 col-12">
+        <h3 class="text-info">{{prod.name}}</h3>
+        <h4 class="text-danger">{{"{:,.0f}".format(prod.price)}} VNĐ</h4>
+    </div>
+</div>
+
+{%endblock%}

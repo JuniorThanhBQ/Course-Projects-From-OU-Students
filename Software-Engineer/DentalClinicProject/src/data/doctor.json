@@ -1,0 +1,15 @@
+[
+  {
+    "id": 3,
+    "name": "Nguyễn Thanh Phong",
+    "email": "2351050133phong@ou.edu.vn",
+    "address": "97 Võ Văn Tần, Phường 11, Quận 3, TP.Hồ Chí Minh",
+    "birthday": "2005-11-14",
+    "phone": "0864613583",
+    "gender": "MALE",
+    "role": "DOCTOR",
+    "title": "Trưởng khoa phòng khám",
+    "degree": "Tiến sĩ Y khoa",
+    "experience": 15
+  }
+]

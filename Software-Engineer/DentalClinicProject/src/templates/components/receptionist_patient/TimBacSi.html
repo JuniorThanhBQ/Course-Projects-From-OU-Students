@@ -1,0 +1,73 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center"
+     style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 5vh">
+    <div class="form-card" style="margin-top: 50px;">
+        <div class="container">
+            <div>
+                <div>
+                    <div class="row g-0 cta-container">
+                        <a class="col-md-6 cta-item bg-orange" href="/Datlich">Đặt lịch hẹn</a>
+                        <a class=" col-md-6 cta-item bg-light-blue" href="/TimBacSi">Tìm bác sĩ</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mt-4">Danh sách Bác Sĩ</h1>
+                <p class="text-muted mt-1">Chuyên môn cao</p>
+            </div>
+            <form method="POST">
+                <div class="row g-4">
+                    {% for d in doctor %}
+                    <div class="col-lg-6 col-md-12 mb-4">
+                        <div class="card border-0 shadow-sm overflow-hidden h-100 flex-md-row">
+                            <div class="col-md-5 col-12">
+                                <div class="h-100 position-relative">
+                                    <img alt="TS.BS Văn Trung Thành"
+                                         class="img-fluid h-100 w-100"
+                                         src="{{d.avatar}}"
+                                         style="object-fit: cover; min-height: 250px;">
+                                    <span class="position-absolute top-0 start-0 m-3 badge rounded-pill bg-primary shadow">{{d.experience}} Năm Kinh Nghiệm</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-7 col-12 card-body d-flex flex-column p-4">
+                                <div class="mb-auto">
+                                    <h5 class="card-title text-primary fw-bold text-uppercase mb-1">{{d.name}}</h5>
+                                    <p class=" small mb-3 text-primary">{{d.title}}</p>
+
+                                    <hr class="my-3 opacity-10">
+
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="text-secondary">Bằng cấp: {{d.degree}}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-3">
+                                            <span class="text-secondary">Giới tính:
+                                            {% if d.gender.name == "MALE" %}
+                                                Nam
+                                            {% else %}
+                                                Nữ
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <a class="btn btn-primary w-100 py-2 fw-bold shadow-sm" href="/Datlich">
+                                        ĐẶT LỊCH HẸN NGAY
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

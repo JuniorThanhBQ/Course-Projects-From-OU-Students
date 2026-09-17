@@ -1,0 +1,395 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+
+{% if success or err_msg %}
+    {% include 'components/Modal.html' %}
+{% endif %}
+
+<div class="container-fluid py-5 d-flex justify-content-center bg-light">
+    <div class="form-card" style="margin-top: 50px;">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">LẬP PHIẾU ĐIỀU TRỊ</h1>
+        </div>
+
+        <form action="/LapPhieuDieuTri/{{appointment.id}}" method="POST">
+            <h5 class="section-title">1. Chọn lịch khám</h5>
+            <div class="row g-3 mb-4">
+                <div class="row align-items-end g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="appointment">Lịch Khám</label>
+                        <select class="form-select" id="appointment" name="appointment"
+                                onchange="window.location.href='/LapPhieuDieuTri/' + this.value">
+                            <option disabled selected>-- Chọn lịch khám --</option>
+                            {% for lk in appointments%}
+                                {% if appointment %}
+                                    {% if lk.id == appointment.id %}
+                                        <option value="{{lk.id}}" selected>{{lk.name}}</option>
+                                    {% else %}
+                                        <option value="{{lk.id}}">{{lk.name}}</option>
+                                     {% endif %}
+                                {% else %}
+                                    <option value="{{lk.id}}">{{lk.name}}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="appointment_id">Mã lịch khám</label>
+                        <input class="form-control" id="appointment_id" type="text" pattern="\d+" value="{{appointment.id}}" onchange="window.location.href='/LapPhieuDieuTri/' + this.value">
+                    </div>
+                </div>
+
+                <hr class="opacity-50">
+            </div>
+
+            {% if appointment %}
+            <h5 class="section-title mb-3">2. Chi tiết lịch khám</h5>
+            <div class="row g-4 mb-4 align-items-start">
+                <div class="col-md-9">
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-md-3 col-form-label" for="patient">Bệnh nhân</label>
+                        <div class="col-md-9">
+                            <input class="form-control" id="patient" value="{{appointment.patient.name}}" type="text" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-md-3 col-form-label" for="date">Ngày khám</label>
+                        <div class="col-md-9">
+                            <div class="input-group">
+                                        <span class="input-group-text bg-white">
+                                            <img alt="calendar"
+                                                 src="https://cdn-icons-png.flaticon.com/128/2278/2278049.png"
+                                                 style="width:18px;height:18px;">
+                                        </span>
+                                <input class="form-control" id="date" name="date"
+                                       value="{{appointment.appointment_date.date()}}" type="date" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-md-3 col-form-label" for="medical_service">Dịch vụ khám</label>
+                        <div class="col-md-9">
+                            <input class="form-control" id="medical_service" name="services" value="{{appointment.medical_service}}" type="text" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3 align-items-center">
+                        <label class="col-md-3 col-form-label" for="appointment_reason">Lý do khám</label>
+                        <div class="col-md-9">
+                            <input class="form-control" id="appointment_reason" value="{{appointment.content | safe }}" type="text" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 d-grid gap-2 justify-content-center">
+                    <a class="p-2 btn btn-light border btn-sm px-3" target="_blank" href="/admin/doctor_patient/details/?id={{appointment.patient.id}}">
+                        Xem hồ sơ
+                    </a>
+                    <a class="p-2 btn btn-light border btn-sm px-3" target="_blank"
+                       href="/XemLich/{{current_user.user.id}}?search={{appointment.name}}">
+                        Xem lịch khám
+                    </a>
+                </div>
+            </div>
+
+            <hr class="opacity-50">
+
+            <h5 class="section-title">3. Nội dung phiếu điều trị</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label class="form-label">Nhập chuẩn đoán</label>
+                    <textarea class="form-control" id="content" name="content"
+                              placeholder="Mô tả triệu chứng hoặc nhu cầu khám..." rows="3" title="Nhập chuẩn đoán!" required></textarea>
+                </div>
+            </div>
+            <div class="mb-4" x-data="medicalServiceHandler()">
+                <h6 class="fw-bold border-bottom pb-2">Chọn dịch vụ</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mt-2">
+                        <thead class="bg-light">
+                        <tr class="text-center">
+                            <th style="width: 50px;">STT</th>
+                            <th>Tên dịch vụ</th>
+                            <th style="width: 150px;">Số tiền</th>
+                            <th>Ghi chú</th>
+                            <th style="width: 100px;">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <template x-for="(row, index) in rows" :key="row.id">
+                            <tr>
+                                <td class="text-center" x-text="index + 1"></td>
+
+                                <td>
+                                    <select class="form-select"
+                                            :name="'service_ids[]'"
+                                            x-model="row.serviceId"
+                                            @change="updatePrice(index)"
+                                            required>
+                                        <option value="" disabled>-- Chọn dịch vụ --</option>
+                                        <template x-for="s in services">
+                                            <option :value="s.id" x-text="s.name" :hidden="isSelected(s.id, index)"></option>
+                                        </template>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <input type="text" class="form-control" readonly :value="formatMoney(row.price)">
+                                </td>
+
+                                <td>
+                                    <input type="text" class="form-control"
+                                           :name="'notes[]'"
+                                           x-model="row.note"
+                                           placeholder="Ghi chú..."
+                                           required>
+                                </td>
+
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            @click="removeRow(index)">
+                                        xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="rows.length === 0">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted fst-italic py-3">
+                                        Chưa có dịch vụ nào được thêm. Nhấn "Thêm" để bắt đầu.
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border btn-sm px-3" @click="addRow()">Thêm</button>
+                    <button type="button" class="btn btn-light border btn-sm px-3" @click="removeAll()">Xóa toàn bộ
+                    </button>
+                </div>
+            </div>
+
+            <hr class="opacity-50">
+
+            <div class="mb-4" x-data="medicineHandler()">
+                <h6 class="fw-bold border-bottom pb-2">IV. Toa thuốc</h6>
+                <div class="form-check mb-2">
+                    <input checked class="form-check-input" id="keToa" name="keToa" type="checkbox">
+                    <label class="form-check-label fw-bold" for="keToa">Kê toa thuốc</label>
+                </div>
+
+                <div class="show-hide-table">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                            <tr class="text-center">
+                                <th style="width: 60px;">STT</th>
+                                <th>Tên thuốc</th>
+                                <th>Liều dùng</th>
+                                <th>Đơn vị:</th>
+                                <th>Hướng dẫn:</th>
+                                <th style="width: 100px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <template x-for="(row, index) in rows" :key="row.id">
+                                <tr>
+                                    <td class="text-center" x-text="index + 1"></td>
+
+                                    <td>
+                                        <select class="form-select"
+                                                :name="'medicine_ids[]'"
+                                                x-model="row.medicineId"
+                                                @change="updateUnit(index)"
+                                                required>
+                                            <option value="" disabled>-- Chọn thuốc --</option>
+                                            <template x-for="m in medicines" :key="m.id">
+                                                <option :value="m.id"
+                                                        x-text="m.name"
+                                                        :hidden="isSelected(m.id, index)"
+                                                        :class="{'text-secondary bg-light': isSelected(m.id, index)}">
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </td>
+
+                                    <td>
+                                        <input type="number" class="form-control text-center"
+                                               :name="'quantities[]'"
+                                               x-model="row.quantity"
+                                               min="1"
+                                               pattern="\d+"
+                                               required>
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control text-center bg-white"
+                                               readonly
+                                               :value="row.unit">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control"
+                                               :name="'guides[]'"
+                                               x-model="row.guide"
+                                               placeholder="Sáng 1 viên, Chiều 1 viên..."
+                                               required>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                @click="removeRow(index)">
+                                            Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+
+                            <template x-if="rows.length === 0">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted fst-italic py-3">
+                                        Chưa có thuốc nào được kê. Nhấn "Thêm" để bắt đầu.
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-light border btn-sm px-3" @click="addRow()">Thêm</button>
+                        <button type="button" class="btn btn-light border btn-sm px-3" @click="removeAll()">Xóa toàn
+                            bộ
+                        </button>
+                    </div>
+                </div>
+
+                <div class="show-hide-input row g-3 mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label" for="no_medicine"></label>
+                        <textarea class="form-control" id="no_medicine" name="no_medicine"
+                                  placeholder="Nhập lý do không kê thuốc" rows="3" title="Nhập lý do!"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-3 mt-5 pb-3">
+                <button type="submit"  class="btn btn-outline-dark px-4 py-2">Lập phiếu điều trị</button>
+            </div>
+            {%endif%}
+        </form>
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+    const serviceList = [
+        {% for s in services %}
+        {id: "{{ s.id }}", name: "{{ s.name }}", price: {{ s.price }} },
+        {% endfor %}
+    ];
+
+    const medicineList = [
+        {% for m in medicines %}
+        { id: "{{ m.id }}", name: "{{ m.name }}", unit: "{{ m.unit }}" },
+        {% endfor %}
+    ];
+
+    function medicalServiceHandler() {
+        return {
+            services: serviceList,
+            rows: [],
+
+            // Hàm thêm dòng mới
+            addRow() {
+                this.rows.push({
+                    id: Date.now(),
+                    serviceId: '',
+                    price: 0,
+                    note: ''
+                });
+            },
+
+            isSelected(serviceId, currentRowIndex) {
+                return this.rows.some((row, idx) => {
+                    return row.serviceId == serviceId && idx !== currentRowIndex;
+                });
+            },
+
+            removeRow(index) {
+                this.rows.splice(index, 1);
+            },
+
+             updatePrice(index) {
+                const selectedId = this.rows[index].serviceId;
+                const service = this.services.find(s => s.id == selectedId);
+                if (service) {
+                    this.rows[index].price = service.price;
+                }
+            },
+
+            removeAll() {
+                if (this.rows.length === 0) return;
+
+                this.rows = [];
+            },
+
+            formatMoney(amount) {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+            }
+        }
+    }
+
+    function medicineHandler() {
+        return {
+            medicines: medicineList,
+            rows: [],
+
+            addRow() {
+                this.rows.push({
+                    id: Date.now(),
+                    medicineId: '',
+                    quantity: 1, // Mặc định là 1
+                    unit: '',
+                    guide: ''
+                });
+            },
+
+            updateUnit(index) {
+                const selectedId = this.rows[index].medicineId;
+                const medicine = this.medicines.find(m => m.id == selectedId);
+                if (medicine) {
+                    if(medicine.unit == 'MedicineUnit.PILL')
+                        this.rows[index].unit = "viên";
+                    else
+                        this.rows[index].unit = "vỉ";
+                } else {
+                    this.rows[index].unit = '';
+                }
+            },
+
+            isSelected(medicineId, currentRowIndex) {
+                return this.rows.some((row, idx) => {
+                    return row.medicineId == medicineId && idx !== currentRowIndex;
+                });
+            },
+
+            removeRow(index) {
+                this.rows.splice(index, 1);
+            },
+
+            removeAll() {
+                if (this.rows.length === 0) return;
+                this.rows = [];
+
+            }
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Trang cá nhân{% endblock %}
+
+{% block style %}
+<link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+<style>
+    body {
+        background: #f5f5f5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column" style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 20px">
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="rounded border border-primary">
+            {% if current_user.is_authenticated %}
+            <div class="d-flex flex-row">
+                <div class="d-flex align-items-center bg-white p-3">
+                    <div class="nav mx-auto flex-column nav-pills gap-3">
+                        <a class="nav-link {{ 'active' if TongQuan }} p-2 text-center"
+                           href="/Dashboard">
+                            Tổng quan
+                        </a>
+
+                        <a class="nav-link {{ 'active' if QuanLyTaiKhoan }} p-2 text-center"
+                           href="/Dashboard/QuanLyTaiKhoan">Quản lý tài khoản
+                        </a>
+
+                        <a class="nav-link {{ 'active' if QuanLyCaNhan }} p-2 text-center"
+                           href="/Dashboard/QuanLyCaNhan">Thông tin cá
+                            nhân
+                        </a>
+
+                        <a class="nav-link mx-auto text-danger" href="/logout">Đăng xuất
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <div class="tab-content py-3" id="v-pills-tabContent" style="width: 70vw">
+                        <div class="{{ 'd-flex align-items-center fade show active' if TongQuan else 'd-none' }}" >
+                            <div class="mx-5 w-75">
+                                <h4 class="text-primary">Chào {{ current_user.user.name }}! </h4>
+                                <p><Strong>"Chăm sóc cho sức khoẻ là đầu tư cho tương lai"</Strong></p>
+                                <ol class="list-group list-group-numbered gap-2">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Thông tin tài khoản</div>
+                                            {% include 'components/dashboard/info/accountinfo.html' %}
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Thông tin cá nhân</div>
+                                            {% include 'components/dashboard/info/userinfo.html' %}
+                                        </div>
+                                    </li>
+
+                                </ol>
+                                <p class="mt-3"><Strong>Giờ truy cập:</Strong> {{ now.strftime('%H:%M:%S %d/%m/%Y') }}
+                                </p>
+                            </div>
+                            <div>
+                                <img alt="avatar" class="rounded-circle mx-auto"
+                                     src="{{ current_user.user.avatar }}"
+                                     style="width: 12rem; height: 12rem">
+                            </div>
+                        </div>
+
+                        <div class="{{ 'd-flex align-items-center fade show active' if QuanLyTaiKhoan else 'd-none' }}" >
+                            <div class="mx-5 w-75">
+                                <h4 class="text-primary">Chỉnh sửa tài khoản</h4>
+                                <ol class="list-group my-3">
+
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Thông tin tài khoản</div>
+                                            {% include 'components/dashboard/info/accountinfo.html' %}
+                                        </div>
+                                    </li>
+                                </ol>
+                                <a class="bg-primary rounded text-white p-2 text-center" href="/CapNhatTK"> Chỉnh sửa
+                                    thông tin
+                                </a>
+                            </div>
+                            <div>
+                                <img alt="avatar" class="rounded-circle mx-auto "
+                                     src="{{ current_user.user.avatar }}"
+                                     style="width: 12rem; height: 12rem">
+                            </div>
+                        </div>
+
+                        <div class="{{ 'd-flex align-items-center fade show active' if QuanLyCaNhan else 'd-none' }}" >
+                            <div class="mx-5 w-75">
+                                <h4 class="text-primary">Chỉnh sửa thông tin</h4>
+                                <ol class="list-group my-3">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">Thông tin cá nhân</div>
+                                            {% include 'components/dashboard/info/userinfo.html' %}
+                                        </div>
+                                    </li>
+                                </ol>
+                                <a class="bg-primary rounded text-white p-2 text-center" href="/CapNhatTT"> Chỉnh sửa
+                                    thông tin
+                                </a>
+                            </div>
+                            <div>
+                                <img alt="avatar" class="rounded-circle mx-auto "
+                                     src="{{ current_user.user.avatar }}"
+                                     style="width: 12rem; height: 12rem">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+                <h3>Vui lòng đăng nhập để sử dụng Dashboard!</h3>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

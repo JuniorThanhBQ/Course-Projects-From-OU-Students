@@ -1,0 +1,46 @@
+{% extends 'layout/base.html' %}
+{% block header %}{%endblock%}
+{% block footer %}{%endblock%}
+{% block content %}
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Thông báo lập phiếu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+        {% if success %}
+            <div class="modal-body">{{success}}</div>
+        {% else %}
+            <div class="modal-body">{{err_msg}}</div>
+        {% endif %}
+      <div class="modal-footer">
+            {% if success %}
+                <a class="btn btn-primary p-2" href="/LapPhieuDieuTri">Đóng</a>
+            {% else %}
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Đóng</button>
+            {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        // 1. Lấy phần tử modal theo ID
+        var myModalEl = document.getElementById('exampleModal');
+
+        // 2. Khởi tạo đối tượng Modal của Bootstrap 5
+        // Tham số thứ 2 là options (static backdrop)
+        var myModal = new bootstrap.Modal(myModalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        // 3. Gọi hàm show()
+        myModal.show();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">E-Commerce</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mynavbar">
+
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">Trang chủ</a>
+                </li>
+
+                {%for c in cates%}
+                <li class="nav-item">
+                    <a class="nav-link" href="/?cate_id={{c.id}}">{{c.name}}</a>
+                </li>
+                {%endfor%}
+
+                {% if current_user.is_authenticated%}
+                  <li class="nav-item">
+                         <a class="nav-link active" href="/login">
+                    <img src="https://res.cloudinary.com/dy1unykph/image/upload/v1729842193/iPhone_15_Pro_Natural_1_ltf9vr.webp" width="25">
+                            Chao {{current_user.name}}!
+                        </a>
+                 </li>
+                  <li class="nav-item">
+                    <a class="nav-link active" href="/logout">&#128229;Đăng xuat</a>
+                </li>
+
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link active" href="/login">&#128229;Đăng nhập</a>
+                </li>
+
+                {% endif %}
+            </ul>
+            <form class="d-flex" method="get">
+                <input class="form-control me-2" type="text" placeholder="Nhập từ khóa..." name="q">
+                <button class="btn btn-primary" type="submit">Tìm</button>
+            </form>
+        </div>
+    </div>
+</nav>

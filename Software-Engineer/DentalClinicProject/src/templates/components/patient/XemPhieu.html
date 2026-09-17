@@ -1,0 +1,177 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="d-flex flex-column" style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 80px">
+    <div class="mx-4 d-flex align-items-center gap-3">
+        <form class="w-50" method="get">
+            <label for="search">Tìm phiếu theo tên</label>
+            <div class="d-flex">
+                <input class="form-control me-2" id="search" type="text" placeholder="Nhập từ khóa..." name="search">
+                <button class="btn btn-primary w-25" type="submit">Tìm phiếu</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="divider d-flex align-items-center my-4">
+        <p class="text-center fw-bold mx-3 mb-0 text-muted">Các phiếu điều trị</p>
+    </div>
+
+    <div class="d-flex align-items-center">
+        <div class="d-flex row col-12">
+            {% for lk in records %}
+            <div class="ticket col-6">
+                <div class="text-center mb-3">
+                    <div class="fw-bold">Bệnh viện Đại Học Mở Thành Phố Hồ Chí Minh</div>
+                    <div class="hospital">97 Võ Văn Tần, Quận 3, TP.Hồ Chí Minh</div>
+                </div>
+                <hr>
+
+                <div class="text-center">
+                    <div class="title">PHIẾU ĐIỀU TRỊ</div>
+                    <div class="text-muted">Mã phiếu: {{ lk.id }}</div>
+                </div>
+
+                <div class="text-center fw-bold mt-1">{{lk.appointment.name}}</div>
+                <div class="text-center room">{{ lk.name }}</div>
+
+                <div class="stt">{{ lk.id }}</div>
+                <div class="text-center text-muted">STT</div>
+
+                <div class="divider d-flex align-items-center my-2">
+                    <p class="text-center fw-bold mb-0 mx-2 text-black">I. Thông tin bệnh nhân</p>
+                </div>
+
+                <div class="my-3">
+                    <div class="row mb-1">
+                        <div class="col-4 label">Họ tên:</div>
+                        <div class="col-8 fw-bold">{{ user.name }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Ngày sinh:</div>
+                        <div class="col-4">{{ user.birthday.strftime('%d/%m/%Y') }}</div>
+                        {% if user.gender.name == 'MALE' %}
+                        <div class="col-4">Giới tính: <b>nam</b></div>
+                        {% elif user.gender.name == 'FEMALE' %}
+                        <div class="col-4">Giới tính: <b>nữ</b></div>
+                        {% else %}
+                        <div class="col-4">Giới tính: <b>khác</b></div>
+                        {% endif %}
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Email:</div>
+                        <div class="col-4">{{ user.email }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Số điện thoại:</div>
+                        <div class="col-4">{{ user.phone }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Địa chỉ:</div>
+                        <div class="col-8">{{ user.address }}</div>
+                    </div>
+
+                </div>
+
+                <div class="divider d-flex align-items-center my-2">
+                    <p class="text-center fw-bold mb-0 mx-2 text-black">II. Thông tin lịch hẹn</p>
+                </div>
+
+                <div class="row mb-1">
+                    <div class="col-4 label">Tên phiếu:</div>
+                    <div class="col-8 ">{{ lk.name }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Phiếu lập vào lúc:</div>
+                    <div class="col-8 ">{{ lk.created_date.strftime('%H:%M - %d/%m/%Y') }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Lịch hẹn</div>
+                    <div class="col-8">{{ lk.appointment }}</div>
+                </div>
+                <div class="row">
+                    <div class="col-4 label">Dịch vụ điều trị:</div>
+                    <div class="col-8 ">
+                        <ul class="ms-3 p-0" style="list-style-type: decimal">
+                            {% for i in lk.services %}
+                            <li>{{ i }} - {{i.note}}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Thuốc kê đơn:</div>
+                    {% if lk.medicine_record %}
+                    <div class="col-8 ">
+                        <ul class="ms-3 p-0" style="list-style-type: decimal">
+                            {% for i in lk.medicine_record.medicine_record_info %}
+                            <li>{{ i }}
+                                <ul class="ms-3 p-0" style="list-style-type: circle">
+                                    <li> Số lượng: {{i.quantity}}
+                                    </li>
+                                    <li>
+                                        {% if i.medicine.unit.name == "PER_DAY"%}
+                                        Đơn vị: viên/ngày
+                                        {% else %}
+                                        Đơn vị: tháng/ngày
+                                        {% endif %}
+                                    </li>
+                                    <li> Hướng dẫn: {{i.guide}}
+                                    </li>
+
+                                </ul>
+                            </li>
+
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <div class="col-8 ">Không có kê toa</div>
+                    {% endif %}
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Bác sĩ phụ trách:</div>
+                    <div class="col-8 ">{{ lk.appointment.doctor }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Chuẩn đoán:</div>
+                    <div class="col-8">{{ lk.content | safe }}</div>
+                </div>
+
+
+                <hr>
+
+                <div class="note text-center">
+                    {% if lk.appointment.status.name == 'DONE' %}
+                    {% if lk.active == 1 %}
+                    Cảm ơn bạn đã tin tưởng sử dụng dịch vụ chúng tôi
+                    {% else %}
+                    Lưu ý: Bạn nhớ thanh toán hóa đơn này nhé.
+                    {% endif %}
+                    {% else %}
+                    Lưu ý: Có mặt trước buổi hẹn từ 15-30p.
+                    {% endif %}
+                </div>
+            </div>
+
+
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="divider d-flex align-items-center my-4">
+        <p class="text-center fw-bold mx-3 mb-0 text-muted">Tìm theo trang</p>
+    </div>
+
+    {%if pages > 0%}
+    <div class="mx-3 d-flex align-items-center gap-2">
+         <ul class="pagination d-flex flex-wrap">
+            {%for i in range(1, pages+1)%}
+            <li class="page-item mx-1 p-2"><a class="page-link px-1 rounded" href="/XemPhieu/{{user.id}}?page={{i}}">Số: {{i}}</a></li>
+            {%endfor%}
+        </ul>
+    </div>
+    {%endif%}
+</div>
+
+{% endblock %}

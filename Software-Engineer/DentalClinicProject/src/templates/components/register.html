@@ -1,0 +1,79 @@
+{% extends 'layout/base.html' %}
+
+{% block title %}Đăng ký{% endblock %}
+
+{% block content %}
+<div>
+    <div class="container py-5 h-100">
+        <div class="row d-flex align-items-center justify-content-center h-100">
+            <div class="col-md-8 col-lg-7 col-xl-6">
+                <img src="https://diemchuan.net/uploads/worigin/2022/07/13/truongdaihocmotphcm_1.png"
+                     class="img-fluid" alt="Ảnh đại diện website">
+            </div>
+            <div class="col-md-7 col-lg-5 col-xl-5 offset-xl-1">
+                <h3 class="text-center my-5"> Đăng ký </h3>
+                {% if err_msg %}
+                    <div class="alert alert-danger">{{ err_msg }}</div>
+                {% endif %}
+                <form method="post">
+                    <div class="d-flex justify-content-start gap-5">
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="LastName">Họ</label>
+                            <input type="text" id="LastName" placeholder="Nhập họ" name="LastName"
+                                   class="form-control form-control-lg" required/>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label class="form-label" for="FirstName">Tên</label>
+                            <input type="text" id="FirstName" placeholder="Nhập tên" name="FirstName"
+                                   class="form-control form-control-lg" required/>
+                        </div>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="username">Tên tài khoản</label>
+                        <input type="text" class="form-control form-control-lg" id="username" name="username" placeholder="Nhập tên tài khoản"
+                               pattern="[a-zA-Z0-9]{3,}" title="Yêu cầu 3 kí tự trở lên và không khoảng trắng" required/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="Email">Địa chỉ email</label>
+                        <input type="email" id="Email" name="Email" placeholder="Nhập email"
+                               class="form-control form-control-lg"
+                               required/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="password">Mật khẩu</label>
+                        <input type="password" id="password" placeholder="Nhập mật khẩu" name="password"
+                               class="form-control form-control-lg" pattern=".{8,}" title="Yêu cầu 8 kí tự trở lên"
+                               required/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="confirm">Nhập lại mật khẩu</label>
+                        <input type="password" id="confirm" placeholder="Nhập lại mật khẩu" name="confirm"
+                               class="form-control form-control-lg" pattern=".{8,}" title="Yêu cầu 8 kí tự trở lên"
+                               required/>
+                    </div>
+
+                    <div class="d-flex flex-column">
+                        <button type="submit"
+                                class="btn btn-primary btn-lg btn-block">Đăng ký
+                        </button>
+
+                        <div class="divider d-flex align-items-center my-4">
+                            <p class="text-center fw-bold mx-3 mb-0 text-muted">Hoặc</p>
+                        </div>
+
+                        <a class="btn btn-primary btn-lg btn-block p-2 "
+                           style="background-color: #ed2d47;" href="/google/register"
+                           role="button">
+                            Đăng ký bằng Google
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

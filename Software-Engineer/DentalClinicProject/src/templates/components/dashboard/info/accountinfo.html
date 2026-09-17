@@ -1,0 +1,5 @@
+<ul class="p-0 m-0 mx-3">
+    <li><Strong>Tên tài khoản:</Strong> {{ current_user.username }}</li>
+    <li><Strong>Ngày tạo tài khoản: </Strong> {{ current_user.created_date.strftime('%H:%M:%S %d/%m/%Y') }}</li>
+    <li><Strong>Loại tài khoản:</Strong> {{ current_user.user.role.name }}</li>
+</ul>

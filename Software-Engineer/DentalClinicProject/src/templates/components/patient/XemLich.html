@@ -1,0 +1,162 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="d-flex flex-column" style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 80px">
+    <div class="mx-4 d-flex align-items-center gap-3">
+        <form class="w-50" method="get">
+            <label for="search">Tra cứu lịch hẹn</label>
+            <div class="d-flex">
+                <input class="form-control me-2" id="search" type="text" placeholder="Nhập tên bệnh nhân hoặc tên lịch" name="search">
+                <button class="btn btn-primary w-25" type="submit">Tìm lịch</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="divider d-flex align-items-center my-4">
+                            <p class="text-center fw-bold mx-3 mb-0 text-muted">Các phiếu hẹn</p>
+    </div>
+
+    <div class="d-flex align-items-center">
+        <div class="d-flex row col-12">
+            {% for lk in appointments %}
+            <div class="ticket col-6">
+                <div class="text-center mb-3">
+                    <div class="fw-bold">Bệnh viện Đại Học Mở Thành Phố Hồ Chí Minh</div>
+                    <div class="hospital">97 Võ Văn Tần, Quận 3, TP.Hồ Chí Minh</div>
+                </div>
+                <hr>
+
+                <div class="text-center">
+                    <div class="title">PHIẾU LỊCH HẸN</div>
+                    <div class="text-muted">Mã phiếu: {{ lk.id }}</div>
+                </div>
+
+                <div class="text-center fw-bold mt-1">{{lk.medical_service.name}}</div>
+                <div class="text-center room">{{ lk.name }}</div>
+
+                <div class="stt">{{ lk.id }}</div>
+                <div class="text-center text-muted">STT</div>
+
+                <div class="divider d-flex align-items-center my-2">
+                            <p class="text-center fw-bold mb-0 mx-2 text-black">I. Thông tin bệnh nhân</p>
+                </div>
+
+                <div class="mt-3">
+                    <div class="row mb-1">
+                        <div class="col-4 label">Họ tên:</div>
+                        <div class="col-8 fw-bold">{{ lk.patient.name }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Ngày sinh:</div>
+                        <div class="col-4">{{ lk.patient.birthday.strftime('%d/%m/%Y') }}</div>
+
+                        {% if lk.patient.gender.name == 'MALE' %}
+                        <div class="col-4">Giới tính: <b>nam</b></div>
+                        {% elif lk.patient.gender.name == 'FEMALE' %}
+                        <div class="col-4">Giới tính: <b>nữ</b></div>
+                        {% else %}
+                        <div class="col-4">Giới tính: <b>khác</b></div>
+                        {% endif %}
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Email:</div>
+                        <div class="col-4">{{ lk.patient.email }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Số điện thoại:</div>
+                        <div class="col-4">{{ lk.patient.phone }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Địa chỉ:</div>
+                        <div class="col-8">{{ lk.patient.address }}</div>
+                    </div>
+                    <div class="row mb-1">
+                        <div class="col-4 label">Lý do khám:</div>
+                        <div class="col-8">{{ lk.content | safe }}</div>
+                    </div>
+                </div>
+
+                <div class="divider d-flex align-items-center my-2">
+                            <p class="text-center fw-bold mb-0 mx-2 text-black">II. Thông tin lịch khám</p>
+                </div>
+
+                <div class="row mb-1">
+                    <div class="col-4 label">Lịch hẹn vào lúc:</div>
+                    <div class="col-8 ">{{ lk.appointment_date.strftime('%H:%M - %d/%m/%Y') }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Dịch vụ khám:</div>
+                    <div class="col-8 ">{{ lk.medical_service.name }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Bác sĩ phụ trách:</div>
+                    <div class="col-8 ">{{ lk.doctor.name }}</div>
+                </div>
+                <div class="row mb-1">
+                    <div class="col-4 label">Trạng thái lịch khám:</div>
+                    {% if lk.status.name == 'DONE' %}
+                    <div class="col-8"><b>Đã khám</b></div>
+                    {% elif lk.status.name == 'NOT_DONE' %}
+                    <div class="col-8"><b>Chưa khám</b></div>
+                    {% else %}
+                    <div class="col-8"><b>Đã hủy (đợi xóa)</b></div>
+                    {% endif %}
+                </div>
+
+                <hr/>
+
+                {% if user_number == 0 and current_user.user.is_receptionist %}
+                    <div class="d-flex justify-content-center">
+                         <a class="p-2 btn btn-primary btn-sm btn-block mx-auto" href="/admin/appointment/edit/?id={{lk.id}}" target="_blank">Cập nhật lịch
+                         </a>
+                        {% if lk.status.name != 'DONE' %}
+                         <a
+                            class="p-2 btn btn-danger btn-sm btn-block mx-auto" href="/HuyLich/{{lk.id}}">Hủy lịch hẹn
+                         </a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {% if current_user.user.is_doctor %}
+                        <div class="d-flex justify-content-center">
+                            {% if lk.patient.pathology %}
+                             <p class="text-danger text-center">Bệnh lý nền: {{lk.patient.pathology}}</p>
+                            {% else %}
+                             <p class="text-primary text-center">Sự hy sinh của người thầy thuốc là món quà vô giá cho bệnh nhân</p>
+                            {% endif %}
+                        </div>
+                    {% elif current_user.user.is_patient %}
+                        {% if lk.status.name == 'DONE' %}
+                            <div class="note text-center">
+                                   Cảm ơn bạn đã tin tưởng sử dụng dịch vụ chúng tôi
+                            </div>
+
+                        {% else %}
+                            <div class="text-center">
+                                    <a
+                                        class="p-2 btn btn-danger btn-sm btn-block mx-auto" href="/HuyLich/{{lk.id}}">Hủy lịch hẹn
+                                     </a>
+                                </div>
+                        {% endif %}
+                    {% endif %}
+                {%endif%}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+     <div class="divider d-flex align-items-center my-4">
+                            <p class="text-center fw-bold mx-3 mb-0 text-muted">Tìm theo trang</p>
+    </div>
+
+    {%if pages > 0%}
+    <div class="mx-3 d-flex align-items-center gap-2">
+        <ul class="pagination d-flex flex-wrap">
+            {%for i in range(1, pages+1)%}
+            <li class="page-item mx-1 p-2"><a class="page-link px-1 rounded" href="/XemLich/{{user_number}}?page={{i}}">Số: {{i}}</a></li>
+            {%endfor%}
+        </ul>
+    </div>
+   {%endif%}
+</div>
+
+{% endblock %}

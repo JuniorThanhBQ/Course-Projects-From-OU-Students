@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "name": "Iphone 16 Pro Max",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1740037805/apple-iphone-16-pro-natural-titanium_lcnlu2.webp",
+    "cate_id": 2
+  },
+  {
+    "id": 2,
+    "name": "Iphone Pro Max 15",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1729842193/iPhone_15_Pro_Natural_1_ltf9vr.webp",
+    "cate_id": 2
+  },
+  {
+    "id": 3,
+    "name": "Galaxy Note",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1729091983/61896OtgvGL_xi09hb.jpg",
+    "cate_id": 3
+  },
+  {
+    "id": 4,
+    "name": "Iphone 13",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1729091944/refurb-iphone-13-pro-max-blue-2023_tuhb2j.jpg",
+    "cate_id": 2
+  },
+  {
+    "id": 5,
+    "name": "Iphone 14",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1729091915/refurb-iphone-14-pro-spaceblack-202404_zrfqfz.jpg",
+    "cate_id": 2
+  },
+  {
+    "id": 6,
+    "name": "Samsung Galaxy",
+    "price": 29000000,
+    "image": "https://res.cloudinary.com/dy1unykph/image/upload/v1729091967/419VTYVRD1L._AC__vih8qs.jpg",
+    "cate_id": 2
+  }
+]

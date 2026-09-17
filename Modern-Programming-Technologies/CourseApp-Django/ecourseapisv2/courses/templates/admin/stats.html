@@ -1,0 +1,59 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+
+<h1> THONG KE SO KHOA HOC THEO DANH MUC</h1>
+<h2>So luong khoa hoc: {{ course_count }}</h2>
+    <strong>Category: Numbers</strong>
+<ul>
+    {% for s in stats %}
+    <li><strong>{{s.name}}: </strong>{{s.count}}</li>
+    {% endfor %}
+</ul>
+
+<div style="width: 30%">
+  <canvas id="myChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    data = [];
+    labels = [];
+    {% for s in stats %}
+       data.push({{s.count}})
+       labels.push('{{s.name}}')
+    {% endfor %}
+
+    window.onload = function(){
+        const ctx = document.getElementById('myChart');
+
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: '# of Votes',
+                data: data,
+                borderWidth: 1,
+                backgroundColor: ['Aqua','Yellow','Green']
+              }]
+            },
+            options: {
+                plugins: {
+                  customCanvasBackgroundColor: {
+                    color: 'lightGreen',
+                  }
+                },
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+    }
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,41 @@
+{% extends 'layout/base.html' %}
+{% block style %}
+<link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+<style>
+body {
+    background: rgba(0, 0, 0, 0.4);
+}
+</style>
+{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="height: 100vh">
+    <div class="bg-white rounded p-3 border border-dark">
+        <h3>Bạn có chắc muốn xóa lịch hẹn này?</h3>
+         <div class="divider d-flex align-items-center my-4">
+            <p class="text-center fw-bold mx-3 mb-0 text-muted">Mã lịch: {{appointment_id}}</p>
+         </div>
+        <div class="d-flex justify-content-between">
+          <button type="submit"
+                class="btn btn-danger btn-lg btn-block" onclick="HuyLich({{appointment_id}})">Hủy lịch hẹn
+         </button>
+            {% if current_user.user.is_receptionist %}
+                 <a
+                        class="p-2 btn btn-primary btn-lg btn-block" href="/XemLich/0">Hủy hành động
+                 </a>
+            {% else %}
+                 <a
+                        class="p-2 btn btn-primary btn-lg btn-block" href="/XemLich/{{current_user.user.id}}">Hủy hành động
+                 </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
+

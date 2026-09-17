@@ -1,0 +1,229 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="d-flex align-items-center" style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 5vh">
+    <div class="d-flex row col-12">
+        {% if current_user.is_authenticated and current_user.user.is_cashier %}
+        <div class="container-fluid py-5 d-flex justify-content-center bg-light ">
+            <div class="form-card" style="margin-top: 50px;">
+                <div class="container my-4">
+                    <h5 class="text-center fw-bold mb-4">THANH TOÁN HÓA ĐƠN</h5>
+                    {% if err_msg %}
+                        <div class="alert alert-danger">{{ err_msg }}</div>
+                    {% endif %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">I. Thông tin phiếu điều trị</h6>
+                        <div class="row d-flex d-inline-block">
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-1" for="name">Họ và tên:</label>
+                                <input class="form-control mb-1" id="name" name="name" placeholder="{{patient.name}}"
+                                       required
+                                       readonly>
+                            </div>
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-1" for="birth">Ngày sinh:</label>
+                                <input class="form-control mb-1" id="birth" name="birth"
+                                       placeholder="{{patient.birthday.strftime('%d/%m/%Y') }}" required
+                                       readonly>
+                            </div>
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-1" for="gender">Giới tính:</label>
+                                <input class="form-control mb-1" id="gender" name="gender"
+                                       placeholder="{{patient.gender.name}}" required
+                                       readonly>
+                            </div>
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-1" for="address">Địa chỉ:</label>
+                                <input class="form-control mb-1" id="address" name="address" placeholder="{{patient.address}}"
+                                       required
+                                       readonly>
+                            </div>
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-2" for="phone">Số điện thoại:</label>
+                                <input class="form-control mb-1" id="phone" name="name" placeholder="{{patient.phone}}"
+                                       required
+                                       readonly>
+                            </div>
+                            <div class="d-flex d-inline-block">
+                                <label class="form-label col-2" for="date">Phiếu khám gần nhất:</label>
+                                <input class="form-control mb-1" id="date" name="date"
+                                       placeholder="{{treatment_record.created_date.strftime('%d/%m/%Y')}}" required
+                                       readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold">II. Thông tin dịch vụ</h6>
+                        <table class="table table-bordered text-center align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên dịch vụ</th>
+                                <th>Số lượng</th>
+                                <th>Tiền</th>
+                                <th>VAT (10%)</th>
+                                <th>Tổng tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>{{appointment_service.name}}</td>
+                                <td>1</td>
+                                <td>{{appointment_service.price}}</td>
+                                <td>{{appointment_service.vat}}</td>
+                                <td>{{appointment_service.total}}</td>
+                            </tr>
+                            {%for p in treatment_services%}
+                            <tr>
+                                <td>{{loop.index + 1}}</td>
+                                <td>{{p}}</td>
+                                <td>1</td>
+                                <td>{{p.medical_service.price}}</td>
+                                <td>{{p.medical_service.vat}}</td>
+                                <td>{{p.medical_service.total}}</td>
+                            </tr>
+                            {%endfor%}
+                            {% if medicine_record_info %}
+                                {%for m in medicine_record_info %}
+                                <tr>
+                                    <td>{{loop.index}}</td>
+                                    <td>{{m.medicine.name}}</td>
+                                    <td>{{m.quantity}}</td>
+                                    <td>{{m.medicine.price}}</td>
+                                    <td>{{m.vat}}</td>
+                                    <td>{{m.total}}</td>
+                                </tr>
+                                {%endfor%}
+                            {% endif %}
+                            <tr>
+                                <td class="text-end fw-bold" colspan="5">Tổng cộng</td>
+                                <td class="fw-bold">{{total_money}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form action="/ThanhToanHoaDon/{{patient.id}}/{{treatment_record.id}}" method="post">
+                        <h6 class="fw-bold">III. Hình thức thanh toán</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex mb-2 gap-2">
+                                    <div class="form-check col-2">
+                                        <input checked
+                                               class="form-check-input"
+                                               id="cash"
+                                               name="payment_method"
+                                               type="radio"
+                                               value="cash">
+                                        <label class="form-check-label" for="cash">
+                                            Tiền mặt
+                                        </label>
+                                    </div>
+                                    <div class="form-check col-3">
+                                        <input class="form-check-input"
+                                               id="bank"
+                                               name="payment_method"
+                                               type="radio"
+                                               value="bank">
+                                        <label class="form-check-label" for="bank">
+                                            Chuyển khoản
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2 d-flex d-inline-block">
+                                    <label class="form-label col-4" for="total_money">Tổng tiền</label>
+                                    <input id="total_money" class="form-control" readonly type="text" value="{{total_money}}">
+                                </div>
+
+                                <div class="mb-2 d-flex d-inline-block">
+                                    <label class="form-label col-4" for="patient_money">Số tiền khách đưa</label>
+                                    <input id="patient_money" name="patient_pay" class="form-control" type="text" required>
+                                </div>
+
+                                <div class="mb-2 d-flex d-inline-block">
+                                    <label class="form-label col-4" for="left">Số tiền cần thanh toán</label>
+                                    <input id="left" class="form-control" readonly>
+                                </div>
+
+                                <div class="mb-2 d-flex d-inline-block">
+                                    <label class="form-label col-4" for="returnMoney">Số tiền thối</label>
+                                    <input id="returnMoney" class="form-control" readonly type="text">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 d-flex flex-column justify-content-center align-items-center gap-3">
+                                <button type="submit" class="btn btn-success d-none w-75"
+                                   id="btnConfirm">
+                                    Xác nhận thanh toán
+                                </button>
+                                <div class="text-center d-none" id="qrBox">
+                                    <p class="fw-bold mb-2">Quét mã QR để thanh toán</p>
+                                    <img alt="QR chuyển khoản"
+                                         class="img-fluid"
+                                         src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRWtaI3OxxcfYXRzrw7XK4NAVAZyCWXVvP_Mg&s"
+                                         style="max-width: 220px;">
+                                </div>
+                                <a class="p-2 btn btn-primary w-75" href="/QuanLyHoaDon">Huỷ thanh toán</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    function updatePaymentUI() {
+        const selected = document.querySelector('input[name="payment_method"]:checked');
+        const btnConfirm = document.getElementById('btnConfirm');
+        const qrBox = document.getElementById('qrBox');
+
+        if (!selected || !btnConfirm || !qrBox) return;
+
+        if (selected.value === 'cash') {
+            btnConfirm.classList.remove('d-none');
+            qrBox.classList.add('d-none');
+        }
+
+        if (selected.value === 'bank') {
+            qrBox.classList.remove('d-none');
+            btnConfirm.classList.add('d-none');
+        }
+    }
+
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', updatePaymentUI);
+    });
+
+    window.addEventListener('DOMContentLoaded', updatePaymentUI);
+</script>
+<script>
+    const totalMoneyInput = document.getElementById('total_money');
+    const patientMoneyInput = document.getElementById('patient_money');
+    const leftInput = document.getElementById('left');
+    const returnMoneyInput = document.getElementById('returnMoney');
+
+    patientMoneyInput.addEventListener('input', () => {
+        const totalVal = parseFloat(totalMoneyInput.value) || 0;
+        const patientVal = parseFloat(patientMoneyInput.value) || 0;
+
+        console.log("test");
+
+        let leftVal = totalVal - patientVal;
+        let returnVal = patientVal - totalVal;
+
+        if (leftVal < 0) leftVal = 0;
+        if (returnVal < 0) returnVal = 0;
+
+        leftInput.value = leftVal.toFixed(0);
+        returnMoneyInput.value = returnVal.toFixed(0);
+    });
+</script>
+{% endblock %}

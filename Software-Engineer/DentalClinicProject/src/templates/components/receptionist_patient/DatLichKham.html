@@ -1,0 +1,155 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center"
+     style="min-height: 100vh; height: auto; padding: 20px 0; margin-top: 5vh">
+    <div class="form-card" style="margin-top: 50px;">
+        <div class="container">
+            <div class="container">
+                <div class="row g-0 cta-container">
+                    <a href="/Datlich" class="col-md-6 cta-item bg-orange">Đặt
+                        lịch hẹn</a>
+                    <a href="/TimBacSi" class=" col-md-6 cta-item bg-light-blue">Tìm
+                        bác sĩ</a>
+                </div>
+            </div>
+
+            <div class="text-center mb-5">
+                <h1 class="fw-bold mt-4">PHIẾU ĐĂNG KÝ KHÁM</h1>
+                <p class="text-muted mt-1">Hệ thống đặt lịch hẹn trực tuyến 24/7</p>
+            </div>
+
+            {% if err_msg %}
+                <div class="alert alert-danger">{{ err_msg }}</div>
+            {% endif %}
+             {% if success_msg %}
+                <div class="alert alert-success">{{ success_msg }}</div>
+            {% endif %}
+
+            <form action="/Datlich" method="POST">
+                <h5 class="section-title">1. THÔNG TIN BỆNH NHÂN</h5>
+                <div class="row g-3 mb-4">
+
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="name">Họ và tên <span style="color: red">*</span></label>
+                        <input class="form-control" name="name" value="{{current_user.user.name}}" required type="text"
+                               id="name">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold" for="birthday">Ngày sinh <span style="color: red">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <img alt="calendar icon" src="https://cdn-icons-png.flaticon.com/128/2278/2278049.png"
+                                     style="width: 20px; height: 20px;">
+                            </span>
+                            <input class="form-control border-start-0" name="birthday" value="{{current_user.user.birthday}}" required type="date"
+                                   id="birthday" min="1900-01-01" max="{{today}}"></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="phone">Số điện thoại <span style="color: red">*</span></label>
+                        {% if current_user.user.phone %}
+                        <input class="form-control" name="phone" value="{{current_user.user.phone}}" required type="tel"
+                               id="phone">
+                        {% else %}
+                        <input class="form-control" name="phone" placeholder="Nhập số điện thoại" pattern="^[0-9]{10}$" title="Số điện thoại không hợp lệ" required type="tel"
+                               >
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="email">Email</label>
+                        <input class="form-control" name="email" value="{{current_user.user.email}}"  type="email" id="email">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="gender">Giới tính <span style="color: red">*</span></label>
+                        <select class="form-select" id="gender" name="gender" required>
+                            <option value="" disabled selected>-- Giới tính --</option>
+                            {% if current_user.user.is_male %}
+                                <option value="MALE" selected>Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                            {% elif current_user.user.is_female  %}
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE" selected>Nữ</option>
+                            {% else %}
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                            {% endif %}
+                            <option value="DEFAULT">Khác</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <h5 class="section-title">2. CHI TIẾT LỊCH HẸN</h5>
+                <div class="row g-3 mb-4">
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="doctor">Bác sĩ <span style="color: red">*</span></label>
+                        <select class="form-select" id="doctor" name="doctor" required>
+                            <option value="" disabled selected>-- Chọn Bác sĩ --</option>
+                            {%for d in doctors%}
+                                <option value="{{ d.id }}">{{d.name}}</option>
+                            {%endfor%}</select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold" for="date">Ngày muốn khám <span style="color: red">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <img alt="calendar icon" src="https://cdn-icons-png.flaticon.com/128/2278/2278049.png"
+                                     style="width: 20px; height: 20px;">
+                            </span>
+                            <input  min="{{ today }}" class="form-control border-start-0" name="date" required type="date" id="date"></div>
+                    </div>
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label" for="service">Dịch vụ <span style="color: red">*</span></label>
+                        <select class="form-select" id="service" name="service" required>
+                            <option value="" disabled selected>-- Chọn Dịch Vụ --</option>
+                            {%for s in services%}
+                                <option value="{{ s.id }}">{{s.name}}</option>
+                            {%endfor%}</select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="time">Khung giờ <span style="color: red">*</span></label>
+                        <select class="form-select" id="time" name="time">
+                            <option value="" disabled selected>-- Khung giờ --</option>
+                            <option value="7h00-8h00">7h00-8h00</option>
+                            <option value="8h30-9h30">8h30-9h30</option>
+                            <option value="10h00-11h30">10h00-11h30</option>
+                            <option value="13h30-14h30">13h30-14h30</option>
+                            <option value="15h00-16h00">15h00-16h00</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+                <div class="col-md-12">
+                    <label class="form-label" for="content">Lý do khám bệnh<span style="color: red">*</span></label>
+                    <textarea class="form-control" id="content" name="content"
+                              placeholder="Mô tả triệu chứng hoặc nhu cầu khám..." rows="4" required></textarea>
+                </div>
+                <div class="col-md-12 mt-3">
+                    <label class="form-label" for="pathology">Bệnh lý nền (nếu có)</label>
+                    <textarea class="form-control" id="pathology" name="pathology"
+                              placeholder="Mô tả bệnh lý..." rows="3"></textarea>
+                </div>
+
+                <div class="d-grid gap-2 my-5 d-md-flex justify-content-md-end">
+                    <button class="btn btn-outline-secondary me-md-2" type="reset">Nhập lại</button>
+                    <button class="btn btn-primary px-5" type="submit">Gửi đăng ký</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "123",
+    "avatar": "https://res.cloudinary.com/dy1unykph/image/upload/v1740037805/apple-iphone-16-pro-natural-titanium_lcnlu2.webp",
+    "role": "ADMIN",
+    "name": "VTT"
+  },
+  {
+    "id": 2,
+    "username": "user",
+    "password": "123",
+    "avatar": "https://res.cloudinary.com/dy1unykph/image/upload/v1740037805/apple-iphone-16-pro-natural-titanium_lcnlu2.webp",
+    "role":  "USER",
+    "name": "VTTS"
+  }
+]

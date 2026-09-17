@@ -1,0 +1,254 @@
+:root {
+    --main-bg-color: white;
+    --main-text-color: black;
+}
+
+*{
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+a{
+    padding: 0!important;
+    text-decoration: none !important;
+}
+
+main{
+    margin-top: 7rem;
+}
+
+body{
+    margin: 0 auto;
+    background-color: var(--main-bg-color);
+    color: var(--main-text-color);
+}
+
+header {
+    font-size: 18px;
+}
+
+.nav-hover{
+    color: #cedff5 !important
+}
+
+.nav-hover:hover{
+    color: white !important
+}
+
+.gradient-custom {
+
+    background: #2f75d0;
+
+    /* Chrome 10-25, Safari 5.1-6 */
+    background: -webkit-linear-gradient(to right, rgba(47,117,208,0.9), rgba(111,134,214,0.9));
+
+    /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    background: linear-gradient(to right, rgba(47,117,208,0.9), rgba(111,134,214,0.9))
+}
+
+.Services{
+    margin-top: 5rem;
+}
+
+.link-muted { color: #aaa; } .link-muted:hover { color: #1266f1; }
+
+.divider:after,
+.divider:before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #c7c7c7;
+}
+
+
+/* CSS cho phiếu khám bệnh */
+.ticket {
+    max-width: 420px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 20px;
+    font-size: 14px;
+}
+.hospital {
+    font-size: 13px;
+    color: #555;
+}
+.title {
+    font-weight: 700;
+    font-size: 20px;
+    color: #0d6efd;
+}
+.room {
+    font-weight: 700;
+    color: #198754;
+    font-size: 18px;
+}
+.stt {
+    width: 70px;
+    height: 70px;
+    border: 3px solid #198754;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px auto;
+    font-size: 22px;
+    font-weight: bold;
+    color: #198754;
+}
+.label {
+    color: #6c757d;
+}
+.note {
+    font-size: 13px;
+    color: #dc3545;
+}
+
+/*Đặt lịch khám*/
+.custom-radio-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px 16px;
+    border: 2px solid var(--bs-border-color);
+    border-radius: 12px;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-dot {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--bs-secondary);
+    border-radius: 50%;
+    position: relative;
+}
+
+.radio-dot::after {
+    content: "";
+    width: 10px;
+    height: 10px;
+    background-color: var(--bs-primary);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.btn-check:checked + .custom-radio-card {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.btn-check:checked + .custom-radio-card .radio-dot {
+    border-color: var(--bs-primary);
+}
+
+.btn-check:checked + .custom-radio-card .radio-dot::after {
+    opacity: 1;
+}
+
+.custom-radio-card:hover {
+    border-color: var(--bs-primary);
+}
+
+.cta-container {
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+}
+
+.cta-item {
+    padding: 30px 20px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    transition: opacity 0.3s;
+    border: none;
+    color: #ffffff;
+}
+
+.cta-item:hover {
+    opacity: 0.9;
+    color: #f8f9fa;
+}
+
+.cta-item i {
+    margin-right: 15px;
+    font-size: 1.5rem;
+}
+
+.bg-orange { background-color: #ffc247; color: #333 !important; }
+.bg-light-blue { background-color: #2bb0e8; }
+
+.form-card {
+    width: 100%;
+    max-width: 1200px;
+    background: #fff;
+    padding: 48px 48px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+
+.card { transition: all 0.3s ease; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important; }
+.icon-box { width: 30px; text-align: center; }
+.btn-primary { background-color: #0062cc; border: none; }
+.btn-primary:hover { background-color: #004da3; }
+
+.show-hide-table{
+    display: none;
+}
+
+.show-hide-input{
+    display: none;
+}
+
+.form-check:has(#keToa:not(:checked)) ~ .show-hide-input {
+    display: block;
+}
+
+.form-check:has(#keToa:checked) + .show-hide-table {
+    display: block;
+}
+
+
+/* Hiệu ứng hover cho từng dòng */
+.hover-bg-light:hover {
+    background-color: #f8f9fa !important;
+    transition: background-color 0.2s ease;
+}
+
+/* Giới hạn nội dung hiển thị 2 dòng rồi hiện dấu ... */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Tùy chỉnh thanh cuộn cho đẹp (Webkit browsers) */
+.card-body::-webkit-scrollbar {
+    width: 6px;
+}
+.card-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.card-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

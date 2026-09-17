@@ -1,0 +1,12 @@
+[
+  {
+    "id": 4,
+    "name": "Lê Thanh Ngân",
+    "email": "lt.ngan@ou.edu.vn",
+    "address": "456 Nguyễn Huệ, TP.HCM",
+    "birthday": "1990-12-12",
+    "gender": "FEMALE",
+    "role": "CASHIER",
+    "title": "Nhân viên thu ngân của Dental Clinic"
+  }
+]

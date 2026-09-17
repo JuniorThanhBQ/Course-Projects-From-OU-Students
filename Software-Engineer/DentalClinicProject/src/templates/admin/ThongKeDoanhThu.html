@@ -1,0 +1,177 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+<div class="container-fluid py-5 d-flex justify-content-center bg-light ">
+    <div class="form-card" style="margin-top: 50px;">
+        <div class="container my-4">
+            <h4 class="text-center fw-bold mb-4">Thống kê doanh thu</h4>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">I. Loại báo cáo</h6>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <label for="cbReportType">Báo cáo</label>
+                            <select class="form-select" id="cbReportType" required  onchange="window.location.href='/ThongKeDoanhThu/' + this.value">
+                                <option value="" disabled selected>-- Chọn loại báo cáo --</option>
+                                <option value="day">Theo ngày</option>
+                                <option value="doctor">Theo bác sĩ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">II. Biểu đồ thống kê</h6>
+                    {% if type %}
+                            <canvas width="300" height="120" id="line-chart"></canvas>
+                    {% else %}
+                        <h3>Vui lòng chọn loại báo cáo!</h3>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">III. Danh sách hóa đơn</h6>
+                    {% if type %}
+                        {% if type == "day" %}
+                            <table class="table table-bordered align-middle text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên hóa đơn</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for i in receipts %}
+                                    <tr>
+                                        <td>{{loop.index}}</td>
+                                        <td>{{i.name}}</td>
+                                        <td>{{i.total_pay_display}}</td>
+                                        <td>{{i.created_date.strftime('%H:%S %d/%m/%Y')}}</td>
+                                        <td>
+                                            <a class="p-2 btn btn-sm btn-outline-primary" target="_blank" href="/admin/receipt/details/?id={{i.id}}">
+                                                Xem chi tiết
+                                            </a>
+                                        </td>
+                                     </tr>
+                            {% endfor %}
+                         {% else %}
+                                <table class="table table-bordered align-middle text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên bác sĩ</th>
+                                        <th>Tên hóa đơn</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for doctor, receipt in doctor_receipt %}
+                                    <tr>
+                                        <td>{{loop.index}}</td>
+                                        <td>{{doctor.name}}</td>
+                                        <td>{{receipt.name}}</td>
+                                        <td>{{receipt.total_pay_display}}</td>
+                                        <td>{{receipt.created_date}}</td>
+                                        <td>
+                                            <a class="p-2 btn btn-sm btn-outline-primary" target="_blank" href="/admin/receipt/details/?id={{receipt.id}}">
+                                                Xem chi tiết
+                                            </a>
+                                        </td>
+                                     </tr>
+                            {% endfor %}
+                         {% endif %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                        <h3>Vui lòng chọn loại báo cáo!</h3>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                {% if type %}
+                <a class="p-2 btn btn-outline-primary" target="_blank" href="/admin/receipt/export/csv/">
+                    Xuất toàn bộ báo cáo
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+    const receiptsData = [
+        {% for m in receipts %}
+            {
+                name: "{{ m.name }}",
+                total: {{ m.total_pay_amount }},
+                payment_date: "{{m.payment_date}}"
+            },
+        {% endfor %}
+    ];
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const labels = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+        labels.push(`${i}/${month + 1}`);
+    }
+
+    // 4. Khởi tạo mảng dataValues full số 0 (độ dài bằng số ngày trong tháng)
+    const dataValues = new Array(daysInMonth).fill(0);
+
+    // 5. Duyệt qua từng hóa đơn và cộng dồn tiền vào đúng ngày
+    receiptsData.forEach(item => {
+        // Chuyển chuỗi ngày từ Python thành đối tượng Date của JS
+        let pDate = new Date(item.payment_date);
+
+        // Kiểm tra xem hóa đơn có đúng tháng/năm đang xét không (đề phòng query SQL lấy thừa)
+        if (pDate.getMonth() === month && pDate.getFullYear() === year) {
+            let day = pDate.getDate();
+
+            // Mảng bắt đầu từ 0, ngày bắt đầu từ 1 nên phải trừ 1
+            // Dùng += để cộng dồn nếu 1 ngày có nhiều hóa đơn
+            dataValues[day - 1] += item.total;
+        }
+    });
+    const ctx = document.getElementById('revenueChart');
+
+    new Chart(document.getElementById("line-chart"), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+            data: dataValues,
+            label: "Doanh thu theo tháng " + (month + 1),
+            borderColor: "#3e95cd",
+            fill: false
+          }
+        ]
+      },
+  options: {
+    title: {
+      display: true,
+      text: 'Thống kê doanh thu theo tháng'
+    }
+  }
+});
+</script>
+{% endblock %}
+

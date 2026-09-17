@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Văn Trung Thành",
+    "email": "2351050164thanh@ou.edu.vn",
+    "address": "97 Võ Văn Tần, Phường 11, Quận 3, TP.Hồ Chí Minh",
+    "birthday": "2005-11-13",
+    "gender": "MALE",
+    "role": "ADMINISTRATOR"
+  },
+  {
+    "id": 5,
+    "name": "Nguyễn Lê Kiều Anh",
+    "email": "nlk.anh@ou.edu.vn",
+    "address": "97 Võ Văn Tần, Phường 11, Quận 3, TP.Hồ Chí Minh",
+    "birthday": "2000-8-7",
+    "gender": "FEMALE",
+    "role": "RECEPTIONIST"
+  }
+]

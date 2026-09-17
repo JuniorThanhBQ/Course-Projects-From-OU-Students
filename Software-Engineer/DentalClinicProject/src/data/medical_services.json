@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "Khám tổng quát",
+    "price": 150000.0,
+    "type": "MEDICAL",
+    "medical_type": "EXAMINE"
+  },
+  {
+    "id": 2,
+    "name": "Trám răng liều vừa",
+    "price": 200000.0,
+    "type": "MEDICAL",
+    "medical_type": "TREATMENT"
+  }
+]

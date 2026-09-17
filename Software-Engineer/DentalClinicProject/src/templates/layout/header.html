@@ -1,0 +1,113 @@
+<header class="gradient-custom rounded p-1 fixed-top animate__animated animate__fadeIn">
+    <nav class="navbar navbar-expand-sm navbar-dark mx-3">
+        <div class="container-fluid">
+            <a class="fs-2 navbar-brand" href="/">OU Dental Clinic</a>
+
+            <button class="navbar-toggler" data-bs-target="#mynavbar" data-bs-toggle="collapse" type="button">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mynavbar">
+                {% if current_user.is_authenticated %}
+                <ul class="navbar-nav mx-auto gap-5">
+                    {% if current_user.user.is_patient %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/Datlich">Đặt lịch khám</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/XemLich/{{current_user.user.id}}">Xem lịch cá nhân</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/XemPhieu/{{current_user.user.id}}">Xem phiếu điều trị</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover"  href="/XemHoaDon/{{current_user.user.id}}">Xem hóa đơn</a>
+                    </li>
+                    {% elif current_user.user.is_receptionist %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/Datlich">Đặt lịch khám</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/XemLich/0">Tra cứu lịch khám</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" target="_blank" href="/admin">Quản lý hồ sơ và lịch</a>
+                    </li>
+                    {% elif current_user.user.is_doctor %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/LapPhieuDieuTri">Lập phiếu điều trị</a>
+                    </li>
+                    <li>
+                        <a class="nav-link nav-hover" target="_blank" href="/admin">Quản lý phiếu điều trị</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/XemLich/{{current_user.user.id}}">Tra cứu lịch cần khám</a>
+                    </li>
+                    {% elif current_user.user.is_cashier %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/QuanLyHoaDon">Quản lý thanh toán</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" target="_blank" href="/admin">Quản lý hóa đơn</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/XemLich/0">Xem lịch hẹn</a>
+                    </li>
+                    <li class="nav-item">
+                         <a class="nav-link nav-hover" target="_blank"  href="/admin/readonly_treatment_record/">Xem phiếu điều trị</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" target="_blank" href="/admin">Trang quản trị</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-hover" href="/ThongKeDoanhThu">Thống kê doanh thu</a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="d-flex align-items-center">
+                    <div class="mx-2">
+                        <a class="btn btn-outline-light btn-md p-2" href="/Dashboard">Trang tài khoản</a>
+                    </div>
+                    <div class="">
+                        <div class="dropdown">
+                            <a aria-expanded="false" class="" data-bs-toggle="dropdown"
+                               href="#" id="dropdownMenuLink" role="button">
+                                <div>
+                                    <img alt="avatar" class="rounded-circle mx-auto"
+                                         src="{{ current_user.user.avatar }}"
+                                         style="width: 3rem; height: 3rem">
+                                </div>
+                            </a>
+
+                            <ul class="dropdown-menu p-2 dropdown-menu-lg-end">
+                                <li><a class="dropdown-item p-1" href="/Dashboard">Trang tài khoản</a></li>
+                                <li><a class="dropdown-item p-1" href="/Dashboard/QuanLyCaNhan">Quản lý tài
+                                    khoản</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item p-1" href="/logout">Đăng xuất</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="mx-auto text-white p-0 my-0">"Cái răng cái tóc là gốc con người!"</p>
+
+                    <div class="d-flex align-items-center">
+                        <div class="mx-2">
+                            <a class="btn btn-outline-light btn-md p-2" href="/login">Đăng nhập</a>
+                        </div>
+                        <div class="">
+                            <a class="btn btn-outline-light btn-md p-2" href="/register">Đăng ký</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+

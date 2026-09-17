@@ -1,0 +1,216 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<main>
+    <section
+            class="Introduction my-5 d-flex justify-content-start mx-4  animate__animated animate__fadeIn">
+        <div class="mt-3 me-auto">
+            <p class="fs-2">
+                Chào mừng bạn đến với
+                <br><span class="fs-1">OU Dental Clinic</span>
+                <br>
+                Sự chăm sóc hiện đại tạo nên một hàm răng hoàn hảo.
+            </p>
+
+            <div class="d-flex my-4 w-50">
+                {% if current_user.is_authenticated %}
+                        {% if current_user.user.is_patient %}
+                            <div class="me-auto">
+                                 <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch</a>
+                            </div>
+
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/XemLich/{{current_user.user.id}}">Xem lịch cá nhân</a>
+                            </div>
+
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/XemPhieu/{{current_user.user.id}}">Xem phiếu</a>
+                            </div>
+
+                             <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/XemHoaDon/{{current_user.user.id}}">Xem hóa đơn</a>
+                            </div>
+                        {% elif current_user.user.is_receptionist %}
+                                <div class="me-auto">
+                                     <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                                </div>
+                             <div class="me-auto">
+                                 <a class="btn btn-outline-dark btn-md p-2" target="_blank" href="/admin">Quản lý hồ sơ và lịch</a>
+                            </div>
+
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/XemLich/0">Tra cứu lịch khám</a>
+                            </div>
+                        {% elif current_user.user.is_doctor %}
+                             <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/LapPhieuDieuTri">Lập phiếu điều trị</a>
+                            </div>
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" target="_blank" href="/admin">Quản lý phiếu</a>
+                            </div>
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-2" href="/XemLich/{{current_user.id}}">Tra cứu lịch cần khám</a>
+                            </div>
+                        {% elif current_user.user.is_cashier %}
+                             <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-1" href="/QuanLyHoaDon">Quản lý thanh toán</a>
+                            </div>
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-1" target="_blank" href="/admin">Quản lý hóa đơn</a>
+                            </div>
+                            <div class="me-auto">
+                                <a class="btn btn-outline-dark btn-md p-1" href="/XemLich/0">Xem lịch</a>
+                            </div>
+                            <div>
+                                <a class="btn btn-outline-dark btn-md p-1" target="_blank" href="/admin/readonly_treatment_record/">Xem phiếu</a>
+                            </div>
+                        {% elif current_user.user.is_administrator %}
+                            <div class="me-auto">
+                                    <a class="btn btn-outline-dark btn-md p-2" target="_blank" href="/QuanLyHoaDon">Trang quản trị</a>
+                                </div>
+                                <div class="me-auto">
+                                    <a class="btn btn-outline-dark btn-md p-2" href="/admin">Thống kê doanh thu</a>
+                                </div>
+                        {% endif %}
+                {% else %}
+                    <div class="me-auto">
+                         <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                    </div>
+
+                    <div class="me-auto">
+                        <a class="btn btn-outline-dark btn-md p-2" href="#Founders">Giới thiệu</a>
+                    </div>
+
+                    <div class="me-auto">
+                        <a class="btn btn-outline-dark btn-md p-2" href="#Services">Dịch vụ</a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="my-5 d-flex justify-content-start align-items-center ">
+                <p class="w-25 me-auto text-justify">
+                    Chăm sóc phòng ngừa đến phục hồi, một phương pháp toàn diện cho sức khỏe răng miệng
+                    của bạn
+                </p>
+                <div class="vr me-auto"></div>
+                <p class="w-25 me-auto text-justify">
+                    Bảo vệ nụ cười từ những bước cơ bản nhất đến các kỹ thuật tái tạo chuyên sâu – một giải pháp
+                    trọn vẹn
+                </p>
+                <div class="vr me-auto"></div>
+                <p class="w-25 me-auto text-justify">
+                    Giải pháp nha khoa không giới hạn: Chủ động phòng ngừa rủi ro, hoàn hảo trong từng ca phục hình
+                </p>
+            </div>
+        </div>
+
+        <div>
+            <img alt="Ảnh giới thiệu" class="rounded mx-auto float-right w-100"
+                 src="https://diemchuan.net/uploads/worigin/2022/07/13/truongdaihocmotphcm_1.png">
+        </div>
+    </section>
+
+    <section id="Founders" class="Founders text-center my-5 mt-5 gradient-custom p-xl-4 text-white"
+             style="background-color: #114fa0">
+        <h3>Gặp gỡ hai nhà sáng lập của phòng khám</h3>
+        <div class="d-flex justify-content-around mt-3 my-5">
+            <div>
+                <p class="mt-3 fs-5">Văn Trung Thành</p>
+                <p class="mt-1 fs-4">Giám đốc phòng khám</p>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20rem; height: 20rem"
+                         src="https://res.cloudinary.com/dfolk8pz2/image/upload/v1765382927/594075567_122215818908520127_5187247091279618650_n_2_p3quk8.png"
+                         alt="Founders">
+                </div>
+            </div>
+
+            <div>
+                <p class="mt-3 fs-5">Nguyễn Thanh Phong</p>
+                <p class="mt-1 fs-4">Trưởng khoa phòng khám</p>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20rem; height: 20rem"
+                         src="https://res.cloudinary.com/dfolk8pz2/image/upload/v1765513747/z7308398508808_a6e5c907bf675437e908af14cb7f69f4_f3ss5b.jpg"
+                         alt="Founders">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="Services" class="Services text-center my-5">
+        <h3 class="mt-5">Các dịch vụ nha khoa phổ biến</h3>
+        <div class="d-flex justify-content-around mt-5">
+            <div>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20vw; height:25vh"
+                         src="https://nhakhoasaomy.com/wp-content/uploads/2024/04/2.jpg"
+                         alt="Dịch vụ phòng khám">
+                </div>
+                <div class="d-flex flex-md-column ">
+                    <p class="mt-3 fs-4">Trám răng</p>
+                    <p class="mx-auto w-75 text-justify">OU Dental Clinic cung cấp dịch vụ trám răng thẩm mỹ, giúp
+                        khôi phục vẻ
+                        đẹp tự nhiên và bảo vệ răng thật chắc khỏe</p>
+                </div>
+                <div class="d-flex my-1 justify-content-around">
+                    <div class="">
+                        <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20vw; height:25vh"
+                         src="https://nhakhoadainam.vn/wp-content/uploads/2023/07/nieng-rang-khong-mac-cai-4.jpg"
+                         alt="Dịch vụ phòng khám">
+                </div>
+                <div class="d-flex flex-md-column">
+                    <p class="mt-3 fs-4">Niềng răng</p>
+                    <p class="mx-auto w-75 text-justify">Dịch vụ niềng răng tại OU Dental Clinic cam kết mang lại nụ
+                        cười thẳng đều và tự tin với phác đồ điều trị chuẩn y khoa.</p>
+                </div>
+                <div class="d-flex my-1 justify-content-around">
+                    <div class="">
+                        <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20vw; height:25vh"
+                         src="https://tse1.explicit.bing.net/th/id/OIP.PEnEuESzEM7MluMCxhrZ-QHaJ3?cb=ucfimg2&ucfimg=1&w=640&h=853&rs=1&pid=ImgDetMain&o=7&rm=3"
+                         alt="Dịch vụ phòng khám">
+                </div>
+                <div class="d-flex flex-md-column">
+                    <p class="mt-3 fs-4">Bọc răng sứ</p>
+                    <p class="mx-auto w-75 text-justify">OU Dental Clinic kiến tạo nụ cười rạng rỡ với dịch vụ bọc
+                        răng sứ cao cấp, đảm bảo độ bền và tính thẩm mỹ vượt trội</p>
+                </div>
+                <div class="d-flex my-1 justify-content-around">
+                    <div class="">
+                        <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div>
+                    <img class="rounded mx-auto" style="width: 20vw; height:25vh"
+                         src="https://watermark.lovepik.com/photo/20211210/large/lovepik-the-image-of-doctors-and-patients-in-dental-picture_501802460.jpg"
+                         alt="Dịch vụ phòng khám">
+                </div>
+                <div class="d-flex flex-md-column">
+                    <p class="mt-3 fs-4">Khám răng</p>
+                    <p class="mx-auto w-75 text-justify">Hãy để OU Dental Clinic chăm sóc sức khỏe nụ cười của bạn
+                        qua quy trình khám răng tổng quát kỹ lưỡng và tận tâm</p>
+                </div>
+                <div class="d-flex my-1 justify-content-around">
+                    <div class="">
+                        <a class="btn btn-outline-dark btn-md p-2 fw-bold" href="/Datlich">Đặt lịch khám</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+

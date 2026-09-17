@@ -1,0 +1,138 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="d-flex align-items-center fade show" style="height: 100vh">
+    {% if CapNhatTK %}
+        <div class="mx-5">
+            <h3 class="mt-5">Cập nhật thông tin tài khoản</h3>
+            {% if err_msg %}
+              <h4 class="bg-danger text-light"> {{ err_msg }}</h4>
+            {% endif %}
+            <form method="post" action="/CapNhatTK">
+                 <div class="d-flex flex-wrap gap-4">
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for=username>Tên tài khoản</label>
+                        <input type="text" id="username" value="{{ current_user.username }}" name="username"
+                               class="form-control form-control-lg" pattern="[a-zA-Z0-9]{3,}" title="Tên tài khoản không được viết dấu thường hoặc có khoảng trắng!"
+                               required/>
+                    </div>
+
+                     <div class="form-outline mb-4">
+                        <label class="form-label" for="password">Mật khẩu hiện tại</label>
+                        <input type="password" id="current_password" placeholder="Nhập mật khẩu" name="current_password"
+                               class="form-control form-control-lg" pattern=".{8,}" title="Yêu cầu 8 kí tự trở lên"
+                               required/>
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="password">Mật khẩu mới</label>
+                        <input type="password" id="password" placeholder="Nhập mật khẩu" name="password"
+                               class="form-control form-control-lg" pattern=".{8,}" title="Yêu cầu 8 kí tự trở lên"
+                               />
+                    </div>
+
+                    <div class="form-outline mb-4">
+                        <label class="form-label" for="confirm">Nhập lại mật khẩu</label>
+                        <input type="password" id="confirm" placeholder="Nhập lại mật khẩu" name="confirm"
+                               class="form-control form-control-lg" pattern=".{8,}" title="Yêu cầu 8 kí tự trở lên"
+                               />
+                    </div>
+                 </div>
+                 <div class="d-flex justify-content-start gap-5">
+                    <div class="d-flex flex-column">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">Xác nhận cập nhật</button>
+                    </div>
+                    <a href="/Dashboard/QuanLyTaiKhoan"
+                       class="btn btn-danger btn-lg btn-block rounded text-white p-2 text-center"> Hủy
+                        cập nhật
+                    </a>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <div class="mx-5">
+            <h3 class="mt-5">Cập nhật thông tin cá nhân</h3>
+            {% if err_msg %}
+            <h4 class="bg-danger text-light"> {{ err_msg }}</h4>
+            {% endif %}
+            <form method="post" action="/CapNhatTT" enctype="multipart/form-data">
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="form-outline w-25">
+                        <label class="form-label" for=name>Họ và tên</label>
+                        <input type="text" id="name" value="{{ current_user.user.name }}" name="name"
+                               class="form-control form-control-lg" pattern="^[a-zA-ZÀ-ỹ\s]{3,}$"
+                               required/>
+                    </div>
+
+                    <div class="form-outline">
+                        <label class="form-label" for=birth>Ngày sinh</label>
+                        <input type="date" id="birth" value="{{ current_user.user.birthday }}" name="birth"
+                               class="form-control form-control-lg" min="1900-01-01" max="{{today}}" required/>
+                    </div>
+
+                    <div class="form-outline">
+                        <label class="form-label" for="gender">Giới tính</label>
+                        <select name="gender" id="gender" class="form-select form-select-lg">
+                            {% if current_user.user.is_male %}
+                                <option value="MALE" selected>Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                            {% elif current_user.user.is_female %}
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE" selected>Nữ</option>
+                            {% else %}
+                                <option value="DEFAULT">Khác</option>
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <div class="form-outline w-50">
+                        <label class="form-label" for=email>Email</label>
+                        <input type="text" id="email" value="{{ current_user.user.email }}"
+                               pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$" name="email"
+                               class="form-control form-control-lg" required/>
+                    </div>
+
+                     <div class="form-outline w-25">
+                        <label class="form-label" for=phone>Số điện thoại</label>
+                        {% if current_user.user.phone %}
+                        <input type="text" id="phone"
+                               value="0{{ current_user.user.phone }}" name="phone"
+                               pattern="^[0-9]{10}$" class="form-control form-control-lg" required/>
+                        {% else %}
+                         <input type="text"
+                               placeholder="Nhập số điện thoại" name="phone"
+                               pattern="^[0-9]{10}$" class="form-control form-control-lg" required/>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-outline w-100">
+                        <label class="form-label" for=address>Địa chỉ</label>
+                        {% if current_user.user.phone %}
+                        <input type="text" id="address" value="{{ current_user.user.address }}" name="address"
+                               class="form-control form-control-lg" required/>
+                         {% else %}
+                         <input type="text" placeholder="Nhập địa chỉ" name="address"
+                               class="form-control form-control-lg" required/>
+                        {% endif %}
+                    </div>
+
+                </div>
+
+                <div class="mt-4 mb-4">
+                    <label class="" for="avatar">Thay ảnh đại diện</label>
+                    <input type="file" class="form-control" id="avatar" placeholder="Ảnh đại diện" name="avatar">
+                </div>
+
+                <div class="d-flex justify-content-start gap-5">
+                    <div class="d-flex flex-column">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">Xác nhận cập nhật</button>
+                    </div>
+                    <a href="/Dashboard/QuanLyCaNhan"
+                       class="btn btn-danger btn-lg btn-block rounded text-white p-2 text-center"> Hủy
+                        cập nhật
+                    </a>
+                </div>
+            </form>
+        </div>
+    {%endif%}
+</div>
+{% endblock %}

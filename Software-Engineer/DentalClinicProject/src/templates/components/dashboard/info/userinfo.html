@@ -1,0 +1,30 @@
+<ul class="p-0 m-0 mx-3">
+    <li><Strong>Họ và tên:</Strong> {{ current_user.user.name }}</li>
+    {% if current_user.user.birthday %}
+        <li><Strong>Ngày sinh:</Strong> {{ current_user.user.birthday.strftime('%d/%m/%Y') }}</li>
+    {% else %}
+        <li><Strong>Ngày sinh:</Strong> Chưa có dữ liệu</li>
+    {% endif %}
+
+    {% if current_user.user.address %}
+        <li><Strong>Địa chỉ:</Strong> {{ current_user.user.address }}</li>
+    {% else %}
+        <li><Strong>Địa chỉ:</Strong> Chưa có dữ liệu</li>
+    {% endif %}
+
+    {% if current_user.user.phone %}
+        <li><Strong>Số điện thoại:</Strong> {{ current_user.user.phone }}</li>
+    {% else %}
+        <li><Strong>Số điện thoại:</Strong> Chưa có dữ liệu</li>
+    {% endif %}
+
+    <li><Strong>Email:</Strong> {{ current_user.user.email }}</li>
+    {% if current_user.user.gender.name == 'MALE'%}
+    <li><Strong>Giới tính:</Strong> nam</li>
+    {% elif current_user.user.gender.name == 'FEMALE'%}
+    <li><Strong>Giới tính:</Strong> nữ</li>
+    {% else %}
+    <li><Strong>Giới tính:</Strong> Khác</li>
+    {% endif %}
+    <li><Strong>Ngày tạo hồ sơ:</Strong> {{ current_user.user.created_date.strftime('%H:%M:%S %d/%m/%Y') }}</li>
+</ul>

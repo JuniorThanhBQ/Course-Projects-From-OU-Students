@@ -1,0 +1,13 @@
+[
+  {
+    "id": 3,
+    "name": "Amoxicillin 500mg",
+    "price": 12000.0,
+    "note": "Kháng sinh Amoxicillin",
+    "type": "MEDICINE",
+    "unit": "PILL",
+    "quantity": 50,
+    "expiry": "2026-12-30",
+    "category_id": 1
+  }
+]

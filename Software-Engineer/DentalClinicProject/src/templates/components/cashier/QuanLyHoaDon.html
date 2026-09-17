@@ -1,0 +1,120 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-5 d-flex justify-content-center bg-light ">
+    <div class="form-card" style="margin-top: 50px;">
+        <div class="container mt-4">
+            <h4 class="text-center fw-bold mb-4">QUẢN LÝ THANH TOÁN</h4>
+            <h6 class="fw-bold">I. Tra cứu hồ sơ</h6>
+            <form action="/QuanLyHoaDon" method="POST">
+                <div class="d-flex align-items-end gap-3">
+                    <div class="col-md-4">
+                        <label for="patient_treatment_id">Mã hồ sơ bệnh nhân / Mã lịch hẹn</label>
+                        <input class="form-control" id="patient_treatment_id" placeholder="Nhập mã..." pattern="\d+" type="text" name="patient_appointment_id">
+                    </div>
+
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" type="submit">Tra cứu hồ sơ</button>
+                    </div>
+                </div>
+            </form>
+
+            <hr>
+
+            <h6 class="fw-bold">II. Thông tin bệnh nhân</h6>
+
+            <div class="row">
+                <div class="d-flex">
+                    <label class="form-label col-2" for="patient_name">Họ và tên:</label>
+                    <input class="form-control mb-1" id="patient_name" name="name" placeholder="{{patient.name}}"
+                    readonly>
+                </div>
+
+                <div class="d-flex">
+                    <label class="form-label col-2" for="patient_birthday">Ngày sinh:</label>
+                    <input class="form-control mb-1" id="patient_birthday" name="name" placeholder="{{patient.birthday}}"
+                    readonly>
+                </div>
+
+                <div class="d-flex">
+                    <label class="form-label col-2" for="patient_address">Địa chỉ: </label>
+                    <input class="form-control mb-1" id="patient_address" name="name" placeholder="{{patient.address}}"
+                    readonly>
+                </div>
+
+                <div class="d-flex">
+                    <label class="form-label col-2" for="patient_phone">Số điện thoại:</label>
+                    <input class="form-control mb-1" id="patient_phone" name="name" placeholder="{{patient.phone}}"
+                    readonly>
+                </div>
+            </div>
+
+            <hr>
+
+            <h6 class="fw-bold">III. Phiếu điều trị của bệnh nhân</h6>
+
+            <div class="card shadow-0 border">
+                <div class="card-header bg-light border-bottom d-flex justify-content-between align-items-center py-3">
+                    <p class="mb-0 fw-bold text-primary">Danh sách phiếu điều trị</p>
+                    <span class="badge bg-secondary">{{ treatment_record|length }} Phiếu</span>
+                </div>
+
+                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                        {% for p in treatment_record %}
+                        <div class="list-group-item p-3 border-bottom hover-bg-light transition-base">
+                            <div class="row align-items-center">
+                                <div class="col-md-2 col-sm-12 text-center mb-2 mb-md-0">
+                                    <div class="avatar-circle bg-light text-primary fw-bold mx-auto mb-1"
+                                    style="width: 40px; height: 40px; line-height: 40px; border-radius: 50%;">
+                                        {{ loop.index }}
+                                    </div>
+                                    <small class="text-muted d-block">Mã lịch hẹn: <strong>{{ p.appointment.id }}</strong></small>
+                                </div>
+
+                                <div class="col-md-5 col-sm-12 mb-2 mb-md-0">
+                                    <h6 class="mb-1 fw-bold text-dark">Mã phiếu điều trị: {{ p.id }}</h6>
+                                    <div class="text-muted small text-truncate-2"> Nội dung: {{ p.content | striptags }}</div>
+                                    <small class="text-secondary"> Ngày tạo phiếu: {{ p.created_date.strftime('%H:%M:%S %d/%m/%Y') }} </small>
+                                 </div>
+
+                                <div class="col-md-3 col-sm-6 mb-2 mb-md-0 text-md-end text-start ">
+                                    {% if p.active %}
+                                        <h5 class="fw-bold text-primary mb-0">{{ p.receipt.total_pay_display }}</h5>
+                                        <span class="badge bg-success bg-opacity-10 text-white px-3 py-2 rounded-pill mt-1">Đã thanh toán</span>
+                                    {% else %}
+                                    <h5 class="fw-bold text-danger mb-0">Chưa lập HĐ</h5>
+                                    <span class="badge bg-danger bg-opacity-10 text-white px-3 py-2 rounded-pill mt-1">
+                                    Chờ thanh toán
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 col-sm-6 text-end">
+                                    {% if p.active %}
+                                        <a class="p-2 btn btn-outline-primary btn-sm w-100 rounded-pill" target="_blank" href="/admin/receipt/details/?id={{p.receipt.id}}">
+                                        Xem hóa đơn
+                                        </a>
+                                    {% else %}
+                                        <a class="p-2 btn btn-primary btn-sm w-100 rounded-pill shadow-sm" href="/ThanhToanHoaDon/{{patient.id}}/{{ p.id }}">
+                                           Thanh toán
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if treatment_record|length == 0 %}
+                        <div class="text-center py-5">
+                            <img alt="Chưa tồn tại phiếu điều trị" src="https://cdn-icons-png.flaticon.com/128/4076/4076432.png" width="60" class="mb-3 opacity-50">
+                            <p class="text-muted">Chưa có phiếu điều trị nào.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "password": "12345678",
+    "user_id": 1
+  },
+  {
+    "id": 2,
+    "username": "patient",
+    "password": "12345678",
+    "user_id": 2
+  },
+  {
+    "id": 3,
+    "username": "doctor",
+    "password": "12345678",
+    "user_id": 3
+  },
+  {
+    "id": 4,
+    "username": "cashier",
+    "password": "12345678",
+    "user_id": 4
+  },
+  {
+    "id": 5,
+    "username": "receptionist",
+    "password": "12345678",
+    "user_id": 5
+  }
+]
