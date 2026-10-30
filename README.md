@@ -18,6 +18,7 @@ Một số tài nguyên phụ IT-OUers:
 5. Trang cộng đồng OU (Hỗ trợ cập nhật tin tức tuyển sinh, Website ôn luyện TADR - Vstep, Owner: Thầy Nguyễn Thành Nam): https://www.oucommunity.dev/
 6. Tài liệu Agentic Coding: https://agenticoding.ai/
 7. IEEE và một số templates nghiên cứu: https://ieeeauthorcenter.ieee.org/
+8. Các tài liệu của IBM: https://www.ibm.com/us-en 
 
 Thông tin khác: Repository có LICENSE là MIT.
 
@@ -39,5 +40,6 @@ Some additional resources for IT students at OU:
 5. OU Community - Shares admission news and provides a website to practice for TADR and VSTEP. Managed by teacher Nguyen Thanh Nam: https://www.oucommunity.dev/
 6. Agentic Coding learning materials: https://agenticoding.ai/
 7. IEEE resources and research paper templates: https://ieeeauthorcenter.ieee.org/
+8. IBM Document: https://www.ibm.com/us-en 
 
 Other information: This repository uses the MIT License.
