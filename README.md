@@ -1,8 +1,27 @@
-# Course-Projects-From-OU-Students
+<div align="center">
+
+# Course Projects from OU Students
 
 <img src="https://res.cloudinary.com/dfolk8pz2/image/upload/r_25/f_auto/q_auto:best/v1793329717/Course-Projects-From-OU-Students_rthcof.png" alt="Banner" />
 
-## Vietnamese
+<p><strong>Course Projects from OU Students - A Public IT Resource for OUers </strong></p>
+
+<p>
+<a href="https://isocpp.org/"><img src="https://img.shields.io/badge/C++-00599C?logo=cplusplus&logoColor=white" alt="C++" /></a>
+<a href="https://react.dev/"><img src="https://img.shields.io/badge/React-149ECA?logo=react&logoColor=white" alt="React" /></a>
+<a href="https://reactnative.dev/"><img src="https://img.shields.io/badge/React_Native-61DAFB?logo=react&logoColor=black" alt="React Native" /></a>
+<a href="https://flask.palletsprojects.com/"><img src="https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white" alt="Flask" /></a>
+<a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" alt="Python" /></a>
+<a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-092E20?logo=django&logoColor=white" alt="Django" /></a>
+<a href="https://docs.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker" /></a>
+<a href="https://github.com/topics/coursework"><img src="https://img.shields.io/badge/Coursework_Problems-6F42C1?logo=bookstack&logoColor=white" alt="Coursework Problems" /></a>
+<a href="https://leetcode.com/"><img src="https://img.shields.io/badge/LeetCode-FFA116?logo=leetcode&logoColor=black" alt="LeetCode" /></a>
+<a href="https://ou.edu.vn/"><img src="https://img.shields.io/badge/OU-005BAC?logo=bookstack&logoColor=white" alt="Ho Chi Minh City Open University" /></a>
+</p>
+
+</div>
+
+## Mô tả nhanh
 
 Về repository này, mình tạo ra với hai mục đích: 
 
@@ -20,11 +39,12 @@ Một số tài nguyên phụ IT-OUers:
 5. Trang cộng đồng OU (Hỗ trợ cập nhật tin tức tuyển sinh, Website ôn luyện TADR - Vstep, Owner: Thầy Nguyễn Thành Nam): https://www.oucommunity.dev/
 6. Tài liệu Agentic Coding: https://agenticoding.ai/
 7. IEEE và một số templates nghiên cứu: https://ieeeauthorcenter.ieee.org/
-8. Các tài liệu của IBM: https://www.ibm.com/us-en 
+8. Các tài liệu của IBM: https://www.ibm.com/us-en
+9. Giải pháp phần mềm 2026: [GPPM2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026) 
 
 Thông tin khác: Repository có LICENSE là MIT.
 
-## English
+## English Note
 
 I created this repository with two purposes:
 
@@ -43,5 +63,6 @@ Some additional resources for IT students at OU:
 6. Agentic Coding learning materials: https://agenticoding.ai/
 7. IEEE resources and research paper templates: https://ieeeauthorcenter.ieee.org/
 8. IBM Document: https://www.ibm.com/us-en 
+9. Software Solutions Competition 2026: [GPPM2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026)
 
 Other information: This repository uses the MIT License.
