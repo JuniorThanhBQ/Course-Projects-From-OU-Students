@@ -1,5 +1,7 @@
 # Course-Projects-From-OU-Students
 
+<img src="https://res.cloudinary.com/dfolk8pz2/image/upload/r_25/f_auto/q_auto:best/v1793329717/Course-Projects-From-OU-Students_rthcof.png" alt="Banner" />
+
 ## Vietnamese
 
 Về repository này, mình tạo ra với hai mục đích: 
