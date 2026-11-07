@@ -21,48 +21,70 @@
 
 </div>
 
-## Mô tả nhanh
+## I. Ghi chú tiếng Việt
 
-Về repository này, mình tạo ra với hai mục đích: 
+Repository này được mình tạo ra với các mục đích như sau: 
 
-1. Refactor GitHub repository cho gọn và chuyên nghiệp
+1. Tái cấu trúc lại các GitHub Repository không còn được sử dụng.
 2. Tạo ra kho lưu trữ các bài tập thực hành/bài tập lớn mà mình từng làm tại trường.
+3. Lưu trữ nhanh các bài tập thuật toán từ LeetCode, HackerRank, VNOI.
+4. Cho phép mọi người lấy và chỉnh sửa tùy ý vì bản chất là kho nguồn mở. 
 
 Sẽ có vài môn học không có dự án vì mình không lưu lại hoặc chưa có thời gian để bổ sung. Mong mọi người thông cảm nhen.
 
 Một số tài nguyên phụ IT-OUers:
 
-1. LeetCode (Cung cấp các bài tập thuật toán khá hay, ai tính thi GPPM nhớ ôn nhé): https://leetcode.com/
-2. HackerRank (Tương tự LeetCode nhưng tập trung vào technical review): https://www.hackerrank.com/
-3. Roadmap (Cung cấp hướng đi "tự học" cụ thể cho các vị trí IT): https://roadmap.sh/
-4. VNOI Online Judge (Nền tảng chính thức được dùng để tổ chức cuộc thi GPPM): https://oj.vnoi.info/
-5. Trang cộng đồng OU (Hỗ trợ cập nhật tin tức tuyển sinh, Website ôn luyện TADR - Vstep, Owner: Thầy Nguyễn Thành Nam): https://www.oucommunity.dev/
-6. Tài liệu Agentic Coding: https://agenticoding.ai/
-7. IEEE và một số templates nghiên cứu: https://ieeeauthorcenter.ieee.org/
-8. Các tài liệu của IBM: https://www.ibm.com/us-en
-9. Giải pháp phần mềm 2026: [GPPM2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026) 
+1. LeetCode (Cung cấp các bài tập thuật toán khá hay, ai tính thi GPPM nhớ ôn nhé): [LeetCode](https://leetcode.com/)
+2. HackerRank (Tương tự LeetCode nhưng tập trung vào technical review): [HackerRank](https://www.hackerrank.com/)
+3. Roadmap (Cung cấp hướng đi "tự học" cụ thể cho các vị trí IT): [Roadmap](https://roadmap.sh/)
+4. VNOI Online Judge (Nền tảng chính thức được dùng để tổ chức cuộc thi GPPM): [VNOI](https://oj.vnoi.info/)
+5. Trang cộng đồng OU (Hỗ trợ cập nhật tin tức tuyển sinh, Website ôn luyện TADR - Vstep, Owner: Thầy Nguyễn Thành Nam): [oucommunity](https://www.oucommunity.dev/)
+6. Tài liệu Agentic Coding: [Agentic Coding](https://agenticoding.ai/)
+7. IEEE và một số templates nghiên cứu: [IEEE](https://ieeeauthorcenter.ieee.org/)
+8. Các tài liệu của IBM: [IBM](https://www.ibm.com/us-en)
+9. Giải pháp phần mềm 2026: [GPPM2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026)
+10. Các biểu mẫu của Khoa: [Biễu mẫu khoa CNTT](https://it.ou.edu.vn/bieu-mau/)  
 
 Thông tin khác: Repository có LICENSE là MIT.
 
-## English Note
+## II. English Note
 
-I created this repository with two purposes:
+I created this repository for the following purposes:
 
-1. To refactor the GitHub repository for a cleaner and more professional look.
-2. To create a repository for the practical exercises/major assignments I've completed at university.
+1. Reorganize old GitHub repositories that are no longer actively maintained.
+2. Build a collection of coursework and major projects that I completed during my time at university.
+3. Quickly store algorithm solutions from platforms such as LeetCode, HackerRank, and VNOI.
+4. Share my work with everyone, allowing anyone to use, modify, and improve the code freely, as this is an open-source repository.
 
-There will be some courses without projects because I haven't saved them or haven't had time to add them yet. Thank you for your understanding.
+Some courses may not have any projects available because I either didn't save them or haven't had enough time to upload them yet and I hope you understand.
 
-Some additional resources for IT students at OU:
+Here are some useful resources that might help you with your studies and IT journey:
 
-1. LeetCode - Offers useful algorithm exercises. If you plan to join the GPPM competition, remember to practice here: https://leetcode.com/
-2. HackerRank - Similar to LeetCode, but focuses more on technical skills assessment: https://www.hackerrank.com/
-3. Roadmap - Provides clear self-study guides for different IT roles: https://roadmap.sh/
-4. VNOI Online Judge - The official platform used to host the GPPM competition: https://oj.vnoi.info/
-5. OU Community - Shares admission news and provides a website to practice for TADR and VSTEP. Managed by teacher Nguyen Thanh Nam: https://www.oucommunity.dev/
-6. Agentic Coding learning materials: https://agenticoding.ai/
-7. IEEE resources and research paper templates: https://ieeeauthorcenter.ieee.org/
-8. IBM Document: https://www.ibm.com/us-en 
-9. Software Solutions Competition 2026: [GPPM2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026)
+1. LeetCode - A great platform for practicing algorithm problems. If you're planning to join the GPPM competition, make sure to practice:  [LeetCode](https://leetcode.com/)
 
-Other information: This repository uses the MIT License.
+2. HackerRank - Similar to LeetCode, but with a stronger focus on technical skills and coding assessments: [HackerRank](https://www.hackerrank.com/)
+
+3. Roadmap - Provides clear learning paths for different IT career roles, especially for self-learners:   [Roadmap](https://roadmap.sh/)
+
+4. VNOI Online Judge - The official platform used to host the GPPM programming competition:
+   [VNOI](https://oj.vnoi.info/)
+
+5. OU Community - A community website that provides admission updates and learning resources for TADR and VSTEP exam preparation. Managed by Mr. Nguyễn Thành Nam: [OU Community](https://www.oucommunity.dev/)
+
+6. Agentic Coding - Learning materials and resources related to Agentic Coding: [Agentic Coding](https://agenticoding.ai/)
+
+7. IEEE - Useful resources and templates for academic research and writing papers:
+   [IEEE Author Center](https://ieeeauthorcenter.ieee.org/)
+
+8. IBM - Technical documentation, learning materials, and other resources provided by IBM: [IBM](https://www.ibm.com/us-en)
+
+9. Software Solutions Competition 2026 (GPPM 2026) - Information about the 2026 Software Solutions Competition:   [GPPM 2026](https://learn-hub.site/cuoc-thi/cuoc-thi-lap-trinh-giai-phap-phan-mem-nam-2026)
+
+10. Faculty Forms - Official forms and documents provided by the Faculty of Information Technology:  [IT Faculty Forms](https://it.ou.edu.vn/bieu-mau/)
+
+This repository is licensed under the MIT License.
+Feel free to explore, use, modify, and share the code for your own learning or projects, as long as you follow the terms of the MIT License.
+
+---
+
+**Happy coding, and I hope you find something useful here! 🦊**
