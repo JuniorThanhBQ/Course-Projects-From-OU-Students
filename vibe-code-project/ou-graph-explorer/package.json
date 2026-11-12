@@ -1,0 +1,11 @@
+{
+  "name": "ou-graph-explorer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static, dependency-free interactive graph of publicly accessible ou.edu.vn websites.",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8080"
+  }
+}
