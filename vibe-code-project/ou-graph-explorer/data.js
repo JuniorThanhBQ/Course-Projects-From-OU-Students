@@ -1,7 +1,8 @@
 // Public OU sub-websites used as graph nodes.
 // Every entry was fetched once, without credentials, and only where robots.txt
-// allowed it. `tcnh.ou.edu.vn` is deliberately absent: its robots.txt is
-// "User-agent: * / Disallow: /". See README.md for the full exclusion list.
+// allowed it. Hosts that forbid crawling, require a login, or have no working
+// TLS are absent by design; the reasoning is in the commit history rather than
+// in a committed list, because this repository is served publicly by Pages.
 //
 // cat: faculty | support | service | publication | campus
 

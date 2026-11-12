@@ -43,12 +43,23 @@ The simulation is seeded, so the drawing is identical on every load and the geom
 
 Sub-domains were collected from the university homepage and its sitemap, then each host was probed for HTTP status, title, `robots.txt`, and TLS validity. A host is included only if it serves a public page and permits crawling.
 
-Deliberately excluded:
+A host is left out if it fails any of these tests:
 
-- `tcnh.ou.edu.vn` — `robots.txt` disallows every path, so it is omitted entirely, including from the link list.
-- Hosts returning HTTP 500 (`nhatro.ou.edu.vn`) or no response.
-- Hosts with expired TLS certificates (`alumni`, `cpa`, `khoaluat`, `ktqlc`, `vi2`).
-- Login portals whose only public surface is an authentication form; `quanlydaotao.ou.edu.vn` is kept because it also serves public information.
+- **Crawling is forbidden.** If `robots.txt` disallows every path, the host is
+  omitted entirely, including from the link directory.
+- **No public page.** Hosts that answer with a server error, return nothing, or
+  serve only a login form are left out. A host is kept when its authentication
+  portal is accompanied by public information.
+- **TLS does not validate.** Expired certificates and incomplete chains are
+  excluded rather than linked with a warning, because a click would train
+  visitors to ignore certificate errors.
+
+The specific hostnames behind each rule are recorded in the commit history
+rather than here. GitHub Pages serves every file in this repository, so a
+written list of excluded hosts would publish an inventory of internal systems
+-- staff and student portals, administrative backends -- from a public page.
+`data.test.js` fails if any page-facing file mentions a host that the graph
+does not link.
 
 `ce`, `congdoan`, and `dtn` do not answer on HTTPS at all. They are linked over plain HTTP and marked "HTTP only" in the interface. Links are never rewritten to `https://` and the Content-Security-Policy deliberately omits `upgrade-insecure-requests`, which would break those three hosts.
 
@@ -58,7 +69,7 @@ The page declares a strict CSP: `default-src 'none'`, scripts and styles from `'
 
 The site sets no cookies, makes no analytics or third-party requests, and collects no personal data. `data.test.js` enforces these properties, including that the static directory in `index.html` matches `data.js` exactly.
 
-The research notes that produced the exclusion list live in `exclusions.js`, which no page loads. That file names internal portals, so shipping it would publish an inventory of systems the explorer never mentions; a test fails if any of those hostnames reappear in a file the browser downloads.
+The exclusion notes name internal portals (student and staff systems, the LMS, the library catalogue). GitHub Pages serves every file in a public repository, so those notes cannot exist as a file of their own -- they would be downloadable at a guessable URL even if no page linked them. They are therefore inlined in `data.test.js`, and a test asserts that no page-facing file, and no `exclusions.js`, contains those hostnames.
 
 ### The plain-HTTP hosts
 
@@ -76,7 +87,6 @@ This is an unofficial, non-commercial student project. It is not affiliated with
 | `style.css` | Theme and category colours |
 | `app.js` | Rendering, pan/zoom, search, highlighting |
 | `data.js` | Node and link records (browser bundle) |
-| `exclusions.js` | Research notes on excluded hosts (tests only) |
 | `layout.js` | Deterministic force layout |
 | `data.test.js` | Data, CSP, and synchronisation checks |
 | `layout.test.js` | Geometry and label-collision checks |

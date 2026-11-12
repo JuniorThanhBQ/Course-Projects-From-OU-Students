@@ -1,6 +1,7 @@
+
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -12,7 +13,6 @@ import {
   CATEGORIES,
   CATEGORY_COLOR,
 } from "./data.js";
-import { EXCLUDED } from "./exclusions.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(here, "index.html"), "utf8");
@@ -50,18 +50,20 @@ test("every node belongs to a declared category", () => {
   for (const n of NODES) assert.ok(declared.has(n.cat), `${n.id}: ${n.cat}`);
 });
 
-test("no node points at a host known to be restricted or broken", () => {
-  const banned = new Set(EXCLUDED.map((e) => e.host));
+/**
+ * Exclusion notes are deliberately not stored anywhere in this repository.
+ * GitHub Pages serves every file in a public repo, so a notes file, or a table
+ * inside a committed test, is just as downloadable as the page itself. The
+ * reasoning for what was left out belongs in the commit message and the pull
+ * request, where it is reviewable without publishing a host inventory.
+ */
+test("nodes only point at hosts that were verified as public and crawlable", () => {
+  assert.ok(ALL.length > 1, "expected the graph to contain sub-sites");
   for (const n of ALL) {
-    assert.ok(!banned.has(n.host), `${n.host} is on the exclusion list`);
+    assert.ok(/^https?:\/\/(?:[a-z0-9-]+\.)?ou\.edu\.vn\/$/.test(n.url), `${n.id}: unexpected URL shape`);
   }
-});
-
-test("tcnh.ou.edu.vn is excluded because its robots.txt forbids all crawling", () => {
-  assert.ok(
-    EXCLUDED.some((e) => e.host === "tcnh.ou.edu.vn" && /Disallow: \//.test(e.reason)),
-  );
-  assert.ok(!ALL.some((n) => n.host === "tcnh.ou.edu.vn"));
+  const hosts = ALL.map((n) => n.host);
+  assert.equal(new Set(hosts).size, hosts.length, "duplicate host in the node list");
 });
 
 test("sites that only serve plain HTTP are flagged, the rest are HTTPS", () => {
@@ -141,18 +143,24 @@ test("the legal notice states independence and no data collection", () => {
 });
 
 /**
- * The exclusion notes list internal portals by name. They belong in tests, not
- * in the bundle: serving them would publish an inventory of systems the page
- * otherwise never mentions. This guards against re-importing them into a
- * shipped file.
+ * Every hostname that appears in a page-facing file must be one of the hosts
+ * the graph actually links. This catches a stray note, a stray comment, or a
+ * reintroduced inventory without this file having to name any of the excluded
+ * hosts -- doing that here would be the same disclosure in a different file.
  */
-test("the shipped bundle does not publish the exclusion list", () => {
-  const shipped = ["data.js", "app.js", "layout.js", "index.html", "style.css"];
-  for (const file of shipped) {
+test("page-facing files mention no host outside the published node list", () => {
+  const published = new Set(ALL.map((n) => n.host));
+  const pageFiles = ["data.js", "app.js", "layout.js", "index.html", "style.css", "README.md"];
+  for (const file of pageFiles) {
     const text = readFileSync(join(here, "..", "ou-graph-explorer", file), "utf8");
-    // Anchor on the internal-only hosts rather than the word EXCLUDED.
-    for (const host of ["sis.ou.edu.vn", "fsis.ou.edu.vn", "htqlkh.ou.edu.vn", "tienichsv.ou.edu.vn"]) {
-      assert.ok(!text.includes(host), `${file} must not name the internal host ${host}`);
+    for (const [host] of text.matchAll(/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.ou\.edu\.vn/gi)) {
+      assert.ok(published.has(host), `${file} mentions ${host}, which is not a published node`);
     }
+  }
+  for (const notes of ["exclusions.js", "EXCLUDED.md"]) {
+    assert.ok(
+      !existsSync(join(here, "..", "ou-graph-explorer", notes)),
+      `exclusion notes must not be committed (${notes} would be downloadable from Pages)`,
+    );
   }
 });
