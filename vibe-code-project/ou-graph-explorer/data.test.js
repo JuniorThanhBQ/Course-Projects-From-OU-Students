@@ -11,8 +11,8 @@ import {
   ROOT,
   CATEGORIES,
   CATEGORY_COLOR,
-  EXCLUDED,
 } from "./data.js";
+import { EXCLUDED } from "./exclusions.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(join(here, "index.html"), "utf8");
@@ -138,4 +138,21 @@ test("the legal notice states independence and no data collection", () => {
   assert.match(html, /not\s+affiliated/i);
   assert.match(html, /no personal data/i);
   assert.match(html, /belong to their\s+respective owners/i);
+});
+
+/**
+ * The exclusion notes list internal portals by name. They belong in tests, not
+ * in the bundle: serving them would publish an inventory of systems the page
+ * otherwise never mentions. This guards against re-importing them into a
+ * shipped file.
+ */
+test("the shipped bundle does not publish the exclusion list", () => {
+  const shipped = ["data.js", "app.js", "layout.js", "index.html", "style.css"];
+  for (const file of shipped) {
+    const text = readFileSync(join(here, "..", "ou-graph-explorer", file), "utf8");
+    // Anchor on the internal-only hosts rather than the word EXCLUDED.
+    for (const host of ["sis.ou.edu.vn", "fsis.ou.edu.vn", "htqlkh.ou.edu.vn", "tienichsv.ou.edu.vn"]) {
+      assert.ok(!text.includes(host), `${file} must not name the internal host ${host}`);
+    }
+  }
 });

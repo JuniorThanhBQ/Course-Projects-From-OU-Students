@@ -54,9 +54,15 @@ Deliberately excluded:
 
 ## Security and privacy
 
-The page declares a strict CSP: `default-src 'none'`, scripts and styles from `'self'` only, and no `'unsafe-inline'`. There are no inline `style` attributes, inline event handlers, or inline scripts; category colours live in `.cat-*` classes. Outbound links use `rel="noopener noreferrer"`.
+The page declares a strict CSP: `default-src 'none'`, scripts and styles from `'self'` only, and no `'unsafe-inline'`. There are no inline `style` attributes, inline event handlers, or inline scripts; category colours live in `.cat-*` classes. Outbound links use `rel="noopener noreferrer"` and the page sets `<meta name="referrer" content="no-referrer">`, so a site you open cannot tell that you came from here.
 
 The site sets no cookies, makes no analytics or third-party requests, and collects no personal data. `data.test.js` enforces these properties, including that the static directory in `index.html` matches `data.js` exactly.
+
+The research notes that produced the exclusion list live in `exclusions.js`, which no page loads. That file names internal portals, so shipping it would publish an inventory of systems the explorer never mentions; a test fails if any of those hostnames reappear in a file the browser downloads.
+
+### The plain-HTTP hosts
+
+`ce`, `congdoan`, and `dtn` have no HTTPS service, so links to them are unencrypted and can be read or altered in transit. They are badged in the interface and the privacy notice warns against signing in over them. This is a property of those hosts, not something this project can fix; the alternative is dropping them, at the cost of the directory being incomplete.
 
 ## Independence
 
@@ -69,7 +75,8 @@ This is an unofficial, non-commercial student project. It is not affiliated with
 | `index.html` | Markup, CSP, static link directory |
 | `style.css` | Theme and category colours |
 | `app.js` | Rendering, pan/zoom, search, highlighting |
-| `data.js` | Node, link, and exclusion records |
+| `data.js` | Node and link records (browser bundle) |
+| `exclusions.js` | Research notes on excluded hosts (tests only) |
 | `layout.js` | Deterministic force layout |
 | `data.test.js` | Data, CSP, and synchronisation checks |
 | `layout.test.js` | Geometry and label-collision checks |
