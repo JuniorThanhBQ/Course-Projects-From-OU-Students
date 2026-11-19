@@ -1,19 +1,23 @@
-import { contract } from "./hierarchy.js";
+import { contract, getHierarchyTransferables } from "./hierarchy.js";
+
 self.onmessage = ({ data }) => {
   try {
-    const iterator = contract(data);
+    const graph = data && "graph" in data ? data.graph : data;
+    const options = data && "options" in data ? data.options : {};
+    const iterator = contract(graph, { progressStep: 500, ...options });
     let step;
     do {
       step = iterator.next();
-      if (
-        !step.done &&
-        (step.value.processed % 500 === 0 ||
-          step.value.processed === step.value.total)
-      )
+      if (!step.done) {
         self.postMessage({ progress: step.value });
+      }
     } while (!step.done);
-    self.postMessage({ hierarchy: step.value });
+    const hierarchy = step.value;
+    const transfer = getHierarchyTransferables(hierarchy);
+    self.postMessage({ hierarchy }, transfer);
   } catch (error) {
-    self.postMessage({ error: error.message });
+    self.postMessage({
+      error: error?.message || "Hierarchy preprocessing failed.",
+    });
   }
 };

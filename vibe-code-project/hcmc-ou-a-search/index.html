@@ -1,69 +1,596 @@
 <!doctype html>
 <html lang="en">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OU · City paths</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-  <link rel="stylesheet" href="style.css" />
-
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Watch bidirectional Contraction Hierarchies search real OpenStreetMap streets between eight Ho Chi Minh City Open University campuses."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>OU City Paths — Campus Route Explorer</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e5a4b'/%3E%3Cpath d='M9 22c0-5 7-4 7-10a4 4 0 1 1 8 0c0 6-7 5-7 10' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='9' cy='22' r='2.5' fill='%23ffffff'/%3E%3Ccircle cx='20' cy='10' r='2.2' fill='%23ffffff'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+    />
+    <link
+      id="leaflet-css"
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("ou-theme");
+          const dark = saved
+            ? saved === "dark"
+            : matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch {}
+      })();
+    </script>
+  </head>
   <body>
-    <header>
-      <a class="brand" href="../../">OU / CITY PATHS</a
-      ><span>HO CHI MINH CITY · Bidirectional CH EXPLORER</span>
-    </header>
-    <main>
-      <aside>
-        <p class="eyebrow">EIGHT CAMPUSES. CONNECTED.</p>
-        <h1>Find your<br />way to OU<span>.</span></h1>
-        <p class="intro">
-          Watch Bidirectional CH explore the streets of Saigon and discover a
-          route between campuses.
-        </p>
-        <form id="controls">
-          <label for="start">01 / START</label
-          ><select id="start"></select
-          ><label for="end">02 / DESTINATION</label
-          ><select id="end"></select
-          ><label for="mode">03 / TRAVEL BY</label
-          ><select id="mode">
-            <option value="motorbike">Motorbike</option>
-            <option value="car">Car</option></select
-          ><button id="begin" type="submit">Begin exploration ↗</button>
-        </form>
-        <p id="status" role="status" aria-live="polite">
-          Choose two different campuses to begin.
-        </p>
-        <div id="result"></div>
-        <details>
-          <summary>How this simulation works</summary>
-          <p>
-            Fastest estimated route within the downloaded road graph. Times use
-            illustrative road-class speeds, without live traffic, signals, turn
-            restrictions, or conditional access. Motorways are excluded. Pins
-            are approximate; the route begins and ends at nearby road nodes.
-            This is an educational simulation.
-          </p>
-          <p>
-            Contraction hierarchies add distance-preserving shortcuts. Forward
-            and reverse Dijkstra searches follow increasing node ranks, then
-            unpack shortcuts into real streets.
-          </p>
-        </details>
-        <a class="source" href="https://ou.edu.vn/cac-co-so-dao-tao/"
-          >OU campus directory ↗</a
+    <a class="skip-link" href="#controls-heading">Skip to route planner</a>
+    <a class="skip-link" href="#map">Skip to map</a>
+
+    <header class="topbar">
+      <a class="brand" href="../../">
+        <svg
+          class="icon"
+          viewBox="0 0 20 20"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-      </aside>
-      <section class="map-wrap">
-        <div id="map" aria-label="Interactive map of Ho Chi Minh City"></div>
-        <div class="legend">
-          <span>● Forward · blue: backward</span><b>━ Final route</b>
+          <path d="M12.5 15 7.5 10l5-5" />
+        </svg>
+        <span>OU City Paths</span>
+      </a>
+      <div class="topbar-meta">8 OU Campuses · Contraction Hierarchies</div>
+      <button
+        id="theme-toggle"
+        type="button"
+        class="btn-icon"
+        aria-label="Switch to dark theme"
+        aria-pressed="false"
+      >
+        <svg
+          class="icon icon-moon"
+          viewBox="0 0 20 20"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M16.5 11.8A6.8 6.8 0 0 1 8.2 3.5a6.8 6.8 0 1 0 8.3 8.3Z" />
+        </svg>
+        <svg
+          class="icon icon-sun"
+          viewBox="0 0 20 20"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="10" cy="10" r="3.5" />
+          <path
+            d="M10 2.5v2M10 15.5v2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M2.5 10h2M15.5 10h2M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <main class="workspace">
+      <section class="panel" aria-labelledby="controls-heading">
+        <h1 id="controls-heading" class="panel-title">Campus Route Explorer</h1>
+        <p class="panel-intro">
+          Watch bidirectional Contraction Hierarchies search real OpenStreetMap
+          streets between Ho Chi Minh City Open University campuses.
+        </p>
+
+        <form id="controls" class="route-form" novalidate>
+          <div class="field">
+            <div class="field-head">
+              <label for="start">Start campus</label>
+              <button
+                id="swap"
+                type="button"
+                class="btn btn-subtle swap-btn"
+                aria-label="Swap start and destination campuses"
+              >
+                <svg
+                  class="icon"
+                  viewBox="0 0 20 20"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M6 4v12M6 4 3.5 6.5M6 4l2.5 2.5M14 16V4M14 16l-2.5-2.5M14 16l2.5-2.5" />
+                </svg>
+                <span>Swap</span>
+              </button>
+            </div>
+            <select id="start" name="start"></select>
+          </div>
+
+          <div class="field">
+            <label for="end">Destination campus</label>
+            <select id="end" name="end"></select>
+          </div>
+
+          <fieldset class="segmented" aria-label="Vehicle profile">
+            <legend>Vehicle profile</legend>
+            <div class="segmented-track">
+              <input
+                type="radio"
+                id="mode-motorbike"
+                name="mode"
+                value="motorbike"
+                checked
+              />
+              <label for="mode-motorbike">
+                <svg
+                  class="icon"
+                  viewBox="0 0 20 20"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="14" r="2.5" />
+                  <circle cx="15.5" cy="14" r="2.5" />
+                  <path d="M5 14h4.2l2.6-4.5h2.2l1.5 4.5M8.5 9.5h3M12 6.5h2.3l1.2 3" />
+                </svg>
+                <span>Motorbike</span>
+              </label>
+
+              <input type="radio" id="mode-car" name="mode" value="car" />
+              <label for="mode-car">
+                <svg
+                  class="icon"
+                  viewBox="0 0 20 20"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3.5 11.5 5 7.2A1.5 1.5 0 0 1 6.4 6.2h7.2a1.5 1.5 0 0 1 1.4 1l1.5 4.3" />
+                  <rect x="2.5" y="11" width="15" height="4" rx="1.2" />
+                  <circle cx="5.8" cy="15.2" r="1.3" />
+                  <circle cx="14.2" cy="15.2" r="1.3" />
+                </svg>
+                <span>Car</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="segmented segmented-3" aria-label="Exploration speed">
+            <legend>Exploration speed</legend>
+            <div class="segmented-track">
+              <input
+                type="radio"
+                id="speed-normal"
+                name="speed"
+                value="normal"
+                checked
+              />
+              <label for="speed-normal">Normal</label>
+
+              <input type="radio" id="speed-fast" name="speed" value="fast" />
+              <label for="speed-fast">Fast</label>
+
+              <input
+                type="radio"
+                id="speed-instant"
+                name="speed"
+                value="instant"
+              />
+              <label for="speed-instant">Instant</label>
+            </div>
+          </fieldset>
+
+          <div class="action-row">
+            <button id="begin" type="submit" class="btn btn-primary">
+              <span id="begin-label">Find route</span>
+              <svg
+                class="icon"
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4.5 10h11M11 5.5 15.5 10 11 14.5" />
+              </svg>
+            </button>
+            <button id="stop" type="button" class="btn btn-danger" hidden>
+              <svg
+                class="icon"
+                viewBox="0 0 20 20"
+                width="15"
+                height="15"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="5" y="5" width="10" height="10" rx="1.5" />
+              </svg>
+              <span>Stop</span>
+            </button>
+            <button id="reset" type="button" class="btn btn-secondary">
+              Reset
+            </button>
+          </div>
+        </form>
+
+        <div id="status-box" class="status-box" data-state="ready">
+          <div class="status-row">
+            <span class="status-icon" aria-hidden="true">
+              <svg
+                class="state-svg state-svg-info"
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="10" cy="10" r="7.5" />
+                <path d="M10 9v4.5M10 6.5h.01" />
+              </svg>
+              <svg
+                class="state-svg state-svg-success"
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="10" cy="10" r="7.5" />
+                <path d="m6.8 10.2 2.2 2.2 4.3-4.6" />
+              </svg>
+              <svg
+                class="state-svg state-svg-warning"
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M10 3.2 17.2 16H2.8L10 3.2Z" />
+                <path d="M10 8v3.5M10 13.8h.01" />
+              </svg>
+              <svg
+                class="state-svg state-svg-error"
+                viewBox="0 0 20 20"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="10" cy="10" r="7.5" />
+                <path d="m7.5 7.5 5 5M12.5 7.5l-5 5" />
+              </svg>
+            </span>
+            <p id="status-text">
+              Ready — press Find route to explore between the selected campuses.
+            </p>
+          </div>
+          <div
+            id="progress-track"
+            class="progress-track"
+            role="progressbar"
+            aria-label="Hierarchy preprocessing progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            hidden
+          >
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+          <button id="retry" type="button" class="btn btn-inline" hidden>
+            Retry
+          </button>
+        </div>
+
+        <div
+          id="sr-status"
+          class="sr-only"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        ></div>
+
+        <section
+          id="result"
+          class="result-summary"
+          aria-label="Route summary"
+          hidden
+        >
+          <p id="result-pair" class="result-pair"></p>
+          <dl class="result-metrics">
+            <div class="metric">
+              <dt>Distance</dt>
+              <dd id="result-distance">—</dd>
+            </div>
+            <div class="metric">
+              <dt>Est. time</dt>
+              <dd id="result-duration">—</dd>
+            </div>
+            <div class="metric">
+              <dt>Explored</dt>
+              <dd id="result-explored">—</dd>
+            </div>
+          </dl>
+          <p id="result-note" class="result-note"></p>
+        </section>
+
+        <details class="notes">
+          <summary>
+            <span>How the algorithm &amp; road model work</span>
+            <svg
+              class="icon chevron"
+              viewBox="0 0 20 20"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5.5 7.5 4.5 5 4.5-5" />
+            </svg>
+          </summary>
+          <div class="notes-body">
+            <p>
+              <strong>Contraction Hierarchies:</strong> A background Web Worker
+              collapses degree-2 street geometry, orders intersections by edge
+              difference and hierarchy level, adds distance-preserving
+              shortcuts, and returns a compact CSR upward graph. Queries run
+              bidirectional upward Dijkstra with Stall-on-Demand, meet at the
+              optimal apex node, and unpack shortcuts into real curved street
+              segments.
+            </p>
+            <p>
+              <strong>Road &amp; speed assumptions:</strong> Educational
+              simulation using OpenStreetMap corridors and illustrative
+              Vietnam/HCMC speeds (car motorway 75, trunk 45, primary 35,
+              secondary 30, tertiary 25, residential 18 km/h; motorbike trunk
+              40, primary 32, secondary 28, tertiary 25, residential 22, alleys
+              14–15 km/h; capped by OSM <code>maxspeed</code>). Under Vietnamese
+              traffic law, motorways are car-only. Live traffic, traffic lights,
+              turn restrictions, tolls, and campus driveway access are not
+              modeled.
+            </p>
+            <p>
+              <strong>Campus pins:</strong> Nhơn Đức, Đồng Nai, and Ninh Hòa use
+              verified coordinates from supplied Google Maps pins; the remaining
+              five HCMC pins are approximate entrance markers. Endpoints snap to
+              the main strongly connected road component within 1.5 km.
+            </p>
+            <a
+              class="source-link"
+              href="https://ou.edu.vn/cac-co-so-dao-tao/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>Official OU campus directory</span>
+              <span class="sr-only"> (opens in new tab)</span>
+              <svg
+                class="icon"
+                viewBox="0 0 20 20"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M11 4.5h4.5V9M15.5 4.5 9.5 10.5M8 5.5H5.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V12" />
+              </svg>
+            </a>
+          </div>
+        </details>
+      </section>
+
+      <section class="map-wrap" aria-label="Interactive campus and route map">
+        <div
+          id="map"
+          role="region"
+          aria-label="Interactive map of Ho Chi Minh City Open University campuses and road search"
+          tabindex="0"
+        ></div>
+
+        <button id="fit-all" type="button" class="map-chip">
+          <svg
+            class="icon"
+            viewBox="0 0 20 20"
+            width="15"
+            height="15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3.5 7.5V3.5h4M16.5 7.5V3.5h-4M3.5 12.5v4h4M16.5 12.5v4h-4" />
+          </svg>
+          <span>All 8 campuses</span>
+        </button>
+
+        <div class="legend" aria-label="Map legend">
+          <span class="legend-item">
+            <svg
+              width="22"
+              height="14"
+              viewBox="0 0 22 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <line
+                x1="2"
+                y1="7"
+                x2="15"
+                y2="7"
+                stroke="var(--series-forward)"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
+              <circle cx="17.5" cy="7" r="2.5" fill="var(--series-forward)" />
+            </svg>
+            <span>Forward</span>
+          </span>
+
+          <span class="legend-item">
+            <svg
+              width="22"
+              height="14"
+              viewBox="0 0 22 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <line
+                x1="2"
+                y1="7"
+                x2="14"
+                y2="7"
+                stroke="var(--series-backward)"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-dasharray="4 3"
+              />
+              <circle
+                cx="17.5"
+                cy="7"
+                r="2.6"
+                stroke="var(--series-backward)"
+                stroke-width="1.6"
+              />
+            </svg>
+            <span>Backward</span>
+          </span>
+
+          <span class="legend-item">
+            <svg
+              width="16"
+              height="14"
+              viewBox="0 0 16 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                cx="8"
+                cy="7"
+                r="5.2"
+                stroke="var(--series-meet)"
+                stroke-width="1.8"
+              />
+              <circle cx="8" cy="7" r="2.2" fill="var(--series-meet)" />
+            </svg>
+            <span>Meeting</span>
+          </span>
+
+          <span class="legend-item">
+            <svg
+              width="22"
+              height="14"
+              viewBox="0 0 22 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <line
+                x1="2.5"
+                y1="7"
+                x2="19.5"
+                y2="7"
+                stroke="var(--route-casing)"
+                stroke-width="7"
+                stroke-linecap="round"
+              />
+              <line
+                x1="2.5"
+                y1="7"
+                x2="19.5"
+                y2="7"
+                stroke="var(--series-route)"
+                stroke-width="4"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span>Route</span>
+          </span>
         </div>
       </section>
     </main>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
     <script type="module" src="app.js"></script>
   </body>
 </html>
