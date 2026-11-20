@@ -448,7 +448,6 @@
       }
       // Verify proximity of first and last token
       const firstToken = tokens[0];
-      const lastToken = tokens[tokens.length - 1];
       let startIdx = normalizedHaystack.indexOf(firstToken);
       while (startIdx !== -1) {
         const windowSlice = normalizedHaystack.slice(
