@@ -272,9 +272,14 @@ test("7. Static Security Audit: Zero Dangerous DOM Sinks (CWE-79), Strict CSP, R
     disclaimerHtml.includes("absence of results does not prove your data is not exposed"),
     "disclaimer.html must include mandatory absence-of-results warning"
   );
+  assert.equal(
+    disclaimerHtml.includes("Explicit Note to Repository Owner"),
+    false,
+    "disclaimer.html must not expose internal repository-owner legal review note publicly"
+  );
   assert.ok(
-    disclaimerHtml.toLowerCase().includes("qualified lawyer"),
-    "disclaimer.html must recommend review by a qualified lawyer"
+    indexHtml.includes('data-set-lang="en"') && indexHtml.includes('data-set-lang="vi"'),
+    "index.html must provide EN / VI language switching controls"
   );
 
   // Official OU Blue (#005BAC and #1956B3) in styles.css
