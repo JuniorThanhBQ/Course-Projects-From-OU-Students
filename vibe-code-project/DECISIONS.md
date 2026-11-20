@@ -54,4 +54,3 @@ This document records the conservative architectural, privacy, security, and des
   1. Execute all browser `fetch()` requests as **CORS-simple `GET` requests** (no custom request headers, `credentials: "omit"`, `referrerPolicy: "no-referrer"`) and canonicalize regional Scribd subdomains (`vi.scribd.com`, `es.scribd.com`, etc.) to `https://www.scribd.com/document/<id>/<slug>`.
   2. Render English and Vietnamese headings, validation messages, verdict reasons, and the mandatory warning (`"absence of results does not prove your data is not exposed"` / `"Việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ"`) together in the default DOM across `index.html`, `disclaimer.html`, and `404.html`.
 - **Rationale:** Eliminates CORS preflight failures in live Chromium browsers while ensuring immediate bilingual accessibility and deterministic verification.
-
