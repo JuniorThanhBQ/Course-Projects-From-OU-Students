@@ -895,12 +895,26 @@ async function runRoute() {
     if (error?.name === "AbortError" || signal.aborted) {
       setStatus("warning", "Search stopped.", { announce: true });
     } else {
-      setStatus(
-        "error",
-        error?.message ||
-          "Could not complete route search. Wait a moment and retry.",
-        { announce: true, showRetry: true },
+      console.error(
+        "[RouteSearch]",
+        error?.message || error,
+        error?.cause || error?.attempts || error,
       );
+      const baseMessage =
+        error?.message ||
+        "Could not complete route search. Wait a moment and retry.";
+      const rawDetail =
+        error?.detail ||
+        (typeof error?.cause === "string"
+          ? error.cause
+          : error?.cause?.message || "");
+      const detail =
+        rawDetail.length > 180 ? `${rawDetail.slice(0, 177)}...` : rawDetail;
+      const statusMessage =
+        detail && detail !== baseMessage
+          ? `${baseMessage} (${detail})`
+          : baseMessage;
+      setStatus("error", statusMessage, { announce: true, showRetry: true });
     }
   } finally {
     if (runId === activeRunId) {
