@@ -41,3 +41,34 @@ P/S: Nói chứ, mình cảm thấy ngành CNTT giờ cũng mông lung lắm lu�
 > AI is advancing incredibly fast, while we still haven't figured out a truly effective way to learn and adapt to all these changes.
 
 **So, keep learning, keep practicing, and don't give up!**
+
+---
+
+## OU Student ID & Name Exposure Self-Check Tool ("Are your student ID and name exposed anywhere?")
+
+This folder (`vibe-code-project/`) also hosts the privacy-first, client-side exposure self-check web tool for Ho Chi Minh City Open University (OU) students (sibling to `vibe-code-project/hcmc-ou-a-search/`).
+
+### Key Features & Security Highlights
+- **Self-Check Privacy-by-Design (`CWE-200`):** Runs 100% in the browser on static GitHub Pages with zero backend database, zero cookies/`localStorage`, and zero server logging. Raw text excerpts from source documents are never rendered so third-party student PII is never re-exposed.
+- **Vietnamese Diacritic Normalization:** Automatically normalizes Vietnamese diacritics (`NFC` / `NFD`) and converts `đ/Đ → d` case-insensitively while validating the exact 10-digit Student ID (`^\d{10}$`).
+- **Deterministic Verdicts (`GENUINE` vs. `FALSE POSITIVE`):** Distinguishes confirmed combined ID + Name exposures (`GENUINE`) from ID-only or Name-only partial matches (`FALSE POSITIVE`).
+- **Strict Security Hardening (`CWE-79`, `CWE-601`, `CWE-1021`, `CWE-1333`):** Enforces a strict Content Security Policy (`default-src 'none'; script-src 'self'; style-src 'self'; ...`), zero `innerHTML`, `https:`-only link validation with `rel="noopener noreferrer"`, and top-frame clickjacking protection.
+
+### Local Verification & Running Locally
+1. **Run Automated Unit & Security Tests (Node.js 18+):**
+   ```bash
+   node --test vibe-code-project/app.test.js
+   ```
+2. **Start a Local Static Server:**
+   ```bash
+   npx serve .
+   # Or using Python:
+   python -m http.server 8080 --directory vibe-code-project
+   ```
+   Then open `http://localhost:8080/index.html` (or `http://localhost:3000/vibe-code-project/index.html`) in your browser.
+
+### Live GitHub Pages Paths
+When deployed via GitHub Pages from the `main` branch root (`/`):
+- **Self-Check Tool:** `/vibe-code-project/` (`index.html`)
+- **Legal Disclaimer & Privacy Notice:** `/vibe-code-project/disclaimer.html`
+- **404 Fallback Page:** `/vibe-code-project/404.html`

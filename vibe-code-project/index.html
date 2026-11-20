@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://api.allorigins.win https://api.codetabs.com https://corsproxy.io https://thingproxy.freeboard.io https://r.jina.ai; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none';" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="description" content="Are your student ID and name exposed anywhere? Privacy-first self-check web tool for Ho Chi Minh City Open University (OU) students. / Công cụ tự kiểm tra nguy cơ lộ Mã số sinh viên và Họ tên." />
+  <title>Are your student ID and name exposed anywhere? — OU Student Privacy Self-Check</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content / Chuyển đến nội dung chính</a>
+
+  <div id="frame-warning" class="frame-warning" hidden role="alert" aria-live="assertive">
+    <div class="container">
+      <p class="frame-warning-title">Security Alert: Embedded Frame Detected (CWE-1021 Protection) / Cảnh báo bảo mật: Phát hiện nhúng trang</p>
+      <p id="frame-warning-text" class="frame-warning-body">For your security, this self-check tool cannot run inside an embedded iframe. Please open this page directly in a top-level browser tab.</p>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand-group">
+        <span class="ou-mark" aria-hidden="true">OU</span>
+        <div class="brand-titles">
+          <span class="brand-name-en">HCMC Open University — Student Privacy Self-Check</span>
+          <span class="brand-name-vi" lang="vi">Trường Đại học Mở TP.HCM — Công cụ Tự kiểm tra Bảo mật Sinh viên</span>
+        </div>
+      </div>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a class="nav-link nav-link-active" href="./index.html" aria-current="page">Self-Check Tool / Tự kiểm tra</a>
+        <a class="nav-link" href="./disclaimer.html">Legal Disclaimer / Miễn trừ trách nhiệm</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <div class="container content-column">
+      <section class="intro-section" aria-labelledby="page-title">
+        <h1 id="page-title" class="page-title">
+          Are your student ID and name exposed anywhere?
+          <span class="title-sub-vi" lang="vi">Mã số sinh viên và họ tên của bạn có bị lộ ở đâu không?</span>
+        </h1>
+        <p class="lead-copy">
+          Use this client-side self-check tool to <strong>check your own information</strong> across public web indices and document repositories (such as Scribd and public web listings). Everything runs directly in your browser with zero database, zero storage, and zero server logging.
+        </p>
+        <p class="lead-copy-vi" lang="vi">
+          Sử dụng công cụ này để <strong>tự kiểm tra thông tin cá nhân của chính mình</strong> trên các chỉ mục tìm kiếm công khai và kho tài liệu (như Scribd hoặc trang web công cộng). Mọi xử lý diễn ra trực tiếp trên trình duyệt của bạn, không có cơ sở dữ liệu và không lưu nhật ký.
+        </p>
+      </section>
+
+      <section class="notice-panel" aria-labelledby="self-check-notice-heading">
+        <div class="notice-header">
+          <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 2.5L4 6v6c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6l-8-3.5z" />
+            <path d="M12 8v4.5" />
+            <circle cx="12" cy="16" r="0.8" />
+          </svg>
+          <h2 id="self-check-notice-heading" class="notice-title">
+            Self-Check Scope &amp; Public Proxy Privacy Notice / Phạm vi Tự kiểm tra &amp; Lưu ý Quyền riêng tư
+          </h2>
+        </div>
+        <ul class="notice-list">
+          <li>
+            <strong>Check your own information only / Chỉ tự kiểm tra thông tin của chính bạn:</strong>
+            This tool is strictly for personal cybersecurity awareness and self-checking. Never use it to look up, harvest, or profile other individuals. To protect third-party privacy (CWE-200), raw text excerpts from public rosters are never displayed.
+          </li>
+          <li>
+            <strong>Public CORS proxy transmission / Minh bạch truyền tải qua cổng proxy công cộng:</strong>
+            Because static GitHub Pages sites cannot directly query cross-origin search engines, your browser sends the search query over HTTPS through read-only public CORS/reader gateways (<code>api.allorigins.win</code>, <code>api.codetabs.com</code>, <code>corsproxy.io</code>, <code>thingproxy.freeboard.io</code>, <code>r.jina.ai</code>) to public search engines. Read the full <a class="inline-link" href="./disclaimer.html">Legal Disclaimer &amp; Privacy Notice / Tuyên bố miễn trừ trách nhiệm</a> before searching.
+          </li>
+        </ul>
+      </section>
+
+      <section class="form-section" aria-labelledby="form-heading">
+        <h2 id="form-heading" class="section-heading">
+          Enter Your Student Credentials to Self-Check
+          <span class="heading-sub-vi" lang="vi">Nhập Mã số sinh viên và Họ tên của bạn để tự kiểm tra</span>
+        </h2>
+
+        <form id="exposure-form" class="search-form" novalidate autocomplete="off">
+          <div class="field-group">
+            <label for="student-id" class="field-label">
+              Student ID (10 digits) <span class="label-vi" lang="vi">/ Mã số sinh viên (đúng 10 chữ số)</span>
+            </label>
+            <p id="student-id-hint" class="field-hint">
+              Format: Exactly 10 numeric digits (0–9), e.g., <code>0000000000</code>. Letters, spaces inside the ID, or 9/11 digits are rejected.
+              <span lang="vi">(Định dạng: Đúng 10 chữ số từ 0–9).</span>
+            </p>
+            <input
+              type="text"
+              id="student-id"
+              name="studentId"
+              class="field-input field-input-mono"
+              inputmode="numeric"
+              pattern="[0-9]{10}"
+              maxlength="14"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              required
+              aria-describedby="student-id-hint student-id-error"
+              placeholder="e.g. 0000000000"
+            />
+            <p id="student-id-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <div class="field-group">
+            <label for="student-name" class="field-label">
+              Full Student Name <span class="label-vi" lang="vi">/ Họ và tên sinh viên</span>
+            </label>
+            <p id="student-name-hint" class="field-hint">
+              Supports Vietnamese with or without diacritics (2–80 characters, letters only). Matching normalizes diacritics (<code>NFD</code>) and converts <code>đ/Đ → d</code> automatically.
+              <span lang="vi">(Hỗ trợ tiếng Việt có dấu hoặc không dấu, tự động chuẩn hóa dấu và đ/Đ).</span>
+            </p>
+            <input
+              type="text"
+              id="student-name"
+              name="studentName"
+              class="field-input"
+              maxlength="80"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              required
+              aria-describedby="student-name-hint student-name-error"
+              placeholder="e.g. Nguyen Van A"
+            />
+            <p id="student-name-error" class="field-error" role="alert" hidden></p>
+          </div>
+
+          <div id="form-general-error" class="general-error" role="alert" hidden></div>
+
+          <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+              <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3.8-3.8" />
+              </svg>
+              <span>Check Exposure Now / Kiểm tra ngay</span>
+            </button>
+            <button type="button" id="cancel-btn" class="btn btn-secondary" hidden>
+              <span>Stop Search / Dừng tìm kiếm</span>
+            </button>
+            <button type="reset" id="reset-btn" class="btn btn-ghost">
+              <span>Clear / Xóa</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section id="status-section" class="status-section" aria-live="polite" aria-atomic="false" hidden>
+        <div id="loading-panel" class="status-panel status-loading" hidden>
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="status-copy">
+            <p id="loading-title" class="status-title">Searching public web indices &amp; verifying document matches...</p>
+            <p id="loading-step" class="status-detail">Querying CORS gateways and normalizing Vietnamese diacritics...</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="results-section" class="results-section" aria-labelledby="results-heading" aria-live="polite" hidden>
+        <div class="results-header">
+          <h2 id="results-heading" class="section-heading">
+            Self-Check Verification Results
+            <span class="heading-sub-vi" lang="vi">Kết quả tự kiểm tra</span>
+          </h2>
+          <p id="results-summary" class="results-summary"></p>
+        </div>
+
+        <div id="findings-container" class="findings-list" role="list"></div>
+
+        <div id="empty-state-panel" class="empty-state-panel" hidden>
+          <div class="empty-state-header">
+            <svg class="icon-svg icon-info" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v4.5" />
+              <circle cx="12" cy="16" r="0.8" />
+            </svg>
+            <h3 class="empty-state-title">
+              No Public Exposure Found in Checked Indices / Không tìm thấy kết quả lộ dữ liệu trên các chỉ mục đã kiểm tra
+            </h3>
+          </div>
+          <p class="empty-state-body">
+            No matching public documents or web pages were returned for your Student ID and normalized name across the queried search indices.
+            However, please note that <strong>absence of results does not prove your data is not exposed</strong>.
+          </p>
+          <p class="empty-state-body-vi" lang="vi">
+            Không tìm thấy tài liệu hoặc trang web công khai nào khớp với Mã số sinh viên và Họ tên của bạn trên các nguồn vừa truy vấn.
+            Tuy nhiên, xin lưu ý quan trọng: <strong>Việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ</strong> (<em>absence of results does not prove your data is not exposed</em>).
+          </p>
+          <p class="empty-state-note">
+            Search engines and public CORS proxies may omit unindexed files, password-protected archives, or rate-limited pages. Read our <a class="inline-link" href="./disclaimer.html">Legal Disclaimer / Tuyên bố miễn trừ trách nhiệm</a> for full accuracy limitations.
+          </p>
+        </div>
+
+        <div id="degraded-panel" class="degraded-panel" hidden>
+          <h3 class="degraded-title">
+            Public Proxy Gateways Temporarily Unreachable or Rate-Limited / Các cổng Proxy công cộng đang tạm thời bị giới hạn
+          </h3>
+          <p id="degraded-message" class="degraded-body">
+            Automated client-side CORS gateways could not complete the search due to network restrictions or rate limiting. remember that <strong>absence of results does not prove your data is not exposed</strong>. You can verify directly using the safe manual search links below (opens in a new tab with <code>rel="noopener noreferrer"</code>):
+          </p>
+          <div id="manual-links-list" class="manual-links-list"></div>
+        </div>
+      </section>
+
+      <section class="methodology-section" aria-labelledby="methodology-heading">
+        <h2 id="methodology-heading" class="section-heading">
+          How Verdicts Are Determined (GENUINE vs. FALSE POSITIVE)
+          <span class="heading-sub-vi" lang="vi">Quy tắc phân loại kết quả (GENUINE và FALSE POSITIVE)</span>
+        </h2>
+        <div class="methodology-grid">
+          <div class="method-item">
+            <div class="method-badge-row">
+              <span class="verdict-badge verdict-genuine">GENUINE</span>
+              <span class="matched-pill">Student ID + Student Name</span>
+            </div>
+            <p class="method-text">
+              Both your exact 10-digit Student ID and your normalized Vietnamese full name (diacritics stripped via Unicode <code>NFD</code>, <code>đ/Đ → d</code>, case-insensitive) are confirmed present in the same public source document or verified index entry.
+            </p>
+            <p class="method-text-vi" lang="vi">
+              Cả Mã số sinh viên (10 chữ số) và Họ tên đầy đủ (sau khi chuẩn hóa tiếng Việt không dấu) đều xuất hiện trong cùng một nguồn tài liệu công khai.
+            </p>
+          </div>
+          <div class="method-item">
+            <div class="method-badge-row">
+              <span class="verdict-badge verdict-false-positive">FALSE POSITIVE</span>
+              <span class="matched-pill">ID Only or Name Only</span>
+            </div>
+            <p class="method-text">
+              Only the 10-digit number matched without confirming your name in the public preview, or only a common name collision was found without your 10-digit Student ID. Flagged for manual verification.
+            </p>
+            <p class="method-text-vi" lang="vi">
+              Chỉ khớp dãy 10 chữ số mà chưa xác nhận thấy họ tên trong bản xem trước công khai, hoặc chỉ trùng họ tên phổ biến mà không có Mã số sinh viên.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">
+        <p class="footer-primary">
+          Independent Student Educational Project — Not affiliated with or endorsed by Ho Chi Minh City Open University (HCMOU).
+        </p>
+        <p class="footer-secondary" lang="vi">
+          Dự án học thuật độc lập của sinh viên — Không trực thuộc hay đại diện chính thức cho Trường Đại học Mở TP.HCM. Cung cấp "NGUYÊN TRẠNG" ("AS IS") không kèm bảo đảm.
+        </p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a class="footer-link" href="./index.html">Self-Check Tool / Trang chủ</a>
+        <a class="footer-link" href="./disclaimer.html">Legal Disclaimer &amp; Privacy / Miễn trừ trách nhiệm</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
