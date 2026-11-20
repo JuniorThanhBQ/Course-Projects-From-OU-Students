@@ -8,8 +8,8 @@
   "use strict";
 
   const MAX_PAYLOAD_CHARS = 524288; // 512 KB cap to prevent ReDoS / memory exhaustion (CWE-1333)
-  const REQUEST_TIMEOUT_MS = 6000;
-  const COOLDOWN_MS = 2500;
+  const REQUEST_TIMEOUT_MS = 10000;
+  const COOLDOWN_MS = 2000;
   const STUDENT_ID_REGEX = /^\d{10}$/;
   const STUDENT_NAME_HAS_LETTER_REGEX = /\p{L}/u;
   const STUDENT_NAME_ALLOWLIST_REGEX = /^[\p{L}\s'.\-]+$/u;
@@ -32,6 +32,17 @@
     "ro.scribd.com",
     "ar.scribd.com"
   ]);
+
+  // Rotation list of regional Scribd mirrors so `r.jina.ai` never bottlenecks or hits per-domain 403 limits on `www.scribd.com`
+  const SCRIBD_SEARCH_MIRRORS = [
+    "https://vi.scribd.com",
+    "https://id.scribd.com",
+    "https://pt.scribd.com",
+    "https://es.scribd.com",
+    "https://fr.scribd.com",
+    "https://de.scribd.com",
+    "https://www.scribd.com"
+  ];
 
   const IGNORED_SEARCH_HOSTS = new Set([
     "search.yahoo.com",
@@ -95,6 +106,8 @@
     "ref",
     "guccounter"
   ]);
+
+  let currentUiLang = "en";
 
   /**
    * Normalizes Vietnamese and Latin strings:
@@ -366,7 +379,7 @@
   }
 
   /**
-   * Classifies a source URL into a clean, human-readable Source Name & Type.
+   * Classifies a source URL into a clean, human-readable Source Name & Type (EN and VI).
    */
   function classifySource(httpsUrl) {
     try {
@@ -437,7 +450,6 @@
     }
 
     // 2. For multi-token names (>= 2 words), check if all tokens appear within a narrow window
-    // (e.g. when URL slugs, table columns, or OCR split middle/given name tokens)
     const tokens = normalizedTarget.split(" ").filter(Boolean);
     if (tokens.length >= 2) {
       for (const token of tokens) {
@@ -446,7 +458,6 @@
           return false;
         }
       }
-      // Verify proximity of first and last token
       const firstToken = tokens[0];
       let startIdx = normalizedHaystack.indexOf(firstToken);
       while (startIdx !== -1) {
@@ -555,16 +566,22 @@
 
   /**
    * Parses raw HTML or Jina Reader Markdown text into candidate items `{ url, title, snippet }`
-   * without using any dangerous DOM sinks. Uses `DOMParser` when available in browser, plus
-   * regex link extraction fallback for Markdown/Lite responses and Node.js test environments.
+   * without using any dangerous DOM sinks.
    */
   function extractCandidatesFromResponse(rawPayload) {
     if (!rawPayload || typeof rawPayload !== "string") {
       return [];
     }
     const bounded = rawPayload.slice(0, MAX_PAYLOAD_CHARS);
-    // If Scribd search explicitly states "No results for ", return empty list immediately
-    if (bounded.includes("No results for ")) {
+    // Reject upstream error or zero-result pages
+    if (
+      bounded.includes("No results for ") ||
+      bounded.includes("Không có kết quả cho ") ||
+      bounded.includes("No se encontraron resultados para ") ||
+      bounded.includes("Tidak ada hasil untuk ") ||
+      bounded.includes("Nenhum resultado para ") ||
+      bounded.includes("AbuseAlleviationError")
+    ) {
       return [];
     }
     const candidatesByKey = new Map();
@@ -583,7 +600,6 @@
           snippet: (contextText || "").slice(0, 1200)
         });
       } else {
-        // Keep the fuller URL (e.g., Scribd URL with slug) and accumulate context for in-memory matching
         if (cleanUrl.length > existing.url.length) {
           existing.url = cleanUrl;
         }
@@ -621,7 +637,7 @@
       }
     }
 
-    // 2. Markdown & raw text URL extraction (handles Jina Reader markdown `[Title](https://...)` and raw SERP HTML in Node)
+    // 2. Markdown & raw text URL extraction
     const mdLinkRegex = /\[([^\]]{1,240})\]\((https?:\/\/[^\s)]+)\)/g;
     let match;
     while ((match = mdLinkRegex.exec(bounded)) !== null) {
@@ -634,7 +650,7 @@
       addCandidate(match[2], match[1], surrounding);
     }
 
-    // 3. Extract href="..." attributes and encoded RU= / uddg= links
+    // 3. Extract href="..." attributes
     const hrefRegex = /href=["']([^"']+)["']/gi;
     while ((match = hrefRegex.exec(bounded)) !== null) {
       if (match.index > 0 && bounded[match.index - 1] === "!") {
@@ -649,7 +665,7 @@
       addCandidate(match[1], "", surrounding);
     }
 
-    // 4. Direct Scribd or public document URLs appearing in plain text
+    // 4. Direct Scribd document URLs in plain text
     const directUrlRegex = /https?:\/\/(?:[a-z0-9-]+\.)*scribd\.com\/(?:document|doc|presentation)\/\d+(?:\/[a-zA-Z0-9_-]+)?/gi;
     while ((match = directUrlRegex.exec(bounded)) !== null) {
       if (match.index > 0 && bounded[match.index - 1] === "!") {
@@ -669,10 +685,7 @@
 
   /**
    * Builds the list of proxy-wrapped URLs for a target URL.
-   * All origins strictly match the CSP `connect-src` allowlist:
-   * - https://r.jina.ai (Primary: native HTTP 200 + `Access-Control-Allow-Origin: *` in Chrome)
-   * - https://api.codetabs.com (Fallback)
-   * - https://api.allorigins.win (Fallback)
+   * All origins strictly match the CSP `connect-src` allowlist.
    */
   function buildProxyGateways(targetUrl) {
     const encoded = encodeURIComponent(targetUrl);
@@ -697,38 +710,43 @@
 
   /**
    * Builds search engine target URLs for a given search query.
-   * Combines direct Scribd full-text search (`https://www.scribd.com/search?query=...`)
-   * with Yahoo Search and DuckDuckGo HTML for comprehensive document + web coverage.
+   * Uses regional Scribd mirrors (`vi.scribd.com`, `id.scribd.com`, `pt.scribd.com`, `es.scribd.com`)
+   * first so requests finish in ~3.5-4.5s without hitting `r.jina.ai`'s rate-limit on `www.scribd.com`
+   * or waiting 16s on Yahoo Search unless fallback is needed.
    */
-  function buildSearchEngineUrls(queryText) {
+  function buildSearchEngineUrls(queryText, mirrorIndexOffset) {
     const q = encodeURIComponent(queryText);
+    const offset = typeof mirrorIndexOffset === "number" ? mirrorIndexOffset : 0;
+    const mirror1 = SCRIBD_SEARCH_MIRRORS[offset % SCRIBD_SEARCH_MIRRORS.length];
+    const mirror2 = SCRIBD_SEARCH_MIRRORS[(offset + 1) % SCRIBD_SEARCH_MIRRORS.length];
+    const mirror3 = SCRIBD_SEARCH_MIRRORS[(offset + 2) % SCRIBD_SEARCH_MIRRORS.length];
+
     return [
       {
-        engine: "Scribd Full-Text Search",
-        url: "https://www.scribd.com/search?query=" + q,
+        engine: "Scribd Index (" + mirror1 + ")",
+        url: mirror1 + "/search?query=" + q,
+        isScribdDirectSearch: true
+      },
+      {
+        engine: "Scribd Mirror (" + mirror2 + ")",
+        url: mirror2 + "/search?query=" + q,
+        isScribdDirectSearch: true
+      },
+      {
+        engine: "Scribd Mirror (" + mirror3 + ")",
+        url: mirror3 + "/search?query=" + q,
         isScribdDirectSearch: true
       },
       {
         engine: "Yahoo Search",
         url: "https://search.yahoo.com/search?p=" + q + "&n=15",
         isScribdDirectSearch: false
-      },
-      {
-        engine: "DuckDuckGo HTML",
-        url: "https://html.duckduckgo.com/html/?q=" + q,
-        isScribdDirectSearch: false
-      },
-      {
-        engine: "Bing Search",
-        url: "https://www.bing.com/search?q=" + q + "&count=15",
-        isScribdDirectSearch: false
       }
     ];
   }
 
   /**
-   * Executes a single CORS-simple GET request (no custom headers to avoid OPTIONS preflight failures)
-   * with `credentials: "omit"`, `referrerPolicy: "no-referrer"`, and per-attempt timeout.
+   * Executes a single CORS-simple GET request (no custom headers to avoid OPTIONS preflight failures).
    */
   async function fetchViaGateway(gateway, parentSignal, fetchImpl) {
     const effectiveFetch = fetchImpl || (typeof fetch !== "undefined" ? fetch : null);
@@ -757,8 +775,14 @@
         throw new Error("HTTP " + response.status);
       }
       const rawText = await response.text();
-      if (!rawText || rawText.length < 30) {
-        throw new Error("Empty proxy response");
+      if (
+        !rawText ||
+        rawText.length < 30 ||
+        rawText.includes("AbuseAlleviationError") ||
+        rawText.includes("Target URL returned error") ||
+        rawText.includes("Rate limit exceeded")
+      ) {
+        throw new Error("Upstream rate-limit or empty response");
       }
 
       if (gateway.isJsonWrapper) {
@@ -779,8 +803,8 @@
   }
 
   /**
-   * Fetches a target URL by calling the primary gateway (`https://r.jina.ai/`) first
-   * so Chrome does not emit unnecessary CORS console errors from secondary proxies unless `r.jina.ai` fails.
+   * Fetches a target URL via the primary gateway (`https://r.jina.ai/`) first,
+   * falling back to secondary gateways only if needed.
    */
   async function fetchTargetWithFallback(targetUrl, parentSignal, fetchImpl) {
     const gateways = buildProxyGateways(targetUrl);
@@ -791,88 +815,59 @@
       }
       try {
         const text = await fetchViaGateway(gateways[i], parentSignal, fetchImpl);
-        if (
-          text &&
-          !text.includes("Target URL returned error") &&
-          !text.includes("Rate limit exceeded")
-        ) {
+        if (text) {
           return text;
         }
       } catch {
-        // Proceed to next fallback gateway only if primary gateway fails
+        // If primary Jina Reader returned 403 for this specific target host, let caller rotate mirror first
+        if (i === 0 && targetUrl.includes("scribd.com/search")) {
+          break;
+        }
       }
     }
-    throw new Error("All CORS gateways failed for target");
+    throw new Error("Gateway failed for target: " + targetUrl);
   }
 
   /**
-   * Runs a search query across Scribd Direct Search and Yahoo Search concurrently,
-   * falling back to DuckDuckGo / Bing only if both fail.
+   * Runs a search query quickly by rotating across fast regional Scribd search mirrors first (~3.5s),
+   * stopping as soon as one mirror succeeds, and falling back to Yahoo Search only if all Scribd mirrors fail.
    */
-  async function executeSearchQuery(queryObj, parentSignal, fetchImpl) {
+  async function executeSearchQuery(queryObj, mirrorOffset, parentSignal, fetchImpl) {
     const queryText = typeof queryObj === "string" ? queryObj : queryObj.text;
     const isCombinedIdAndNameQuery = Boolean(queryObj && queryObj.isCombined);
     const isIdOnlyQuery = Boolean(queryObj && queryObj.isIdOnly);
 
-    const engines = buildSearchEngineUrls(queryText);
+    const engines = buildSearchEngineUrls(queryText, mirrorOffset);
     const collectedCandidates = [];
     let anyGatewaySucceeded = false;
 
-    // Query Scribd Full-Text Search and Yahoo Search concurrently
-    const firstWave = engines.slice(0, 2);
-    const waveResults = await Promise.allSettled(
-      firstWave.map(async (eng) => {
-        const payload = await fetchTargetWithFallback(eng.url, parentSignal, fetchImpl);
-        return { engine: eng, payload: payload };
-      })
-    );
-
-    for (const res of waveResults) {
-      if (res.status === "fulfilled" && res.value && res.value.payload) {
-        anyGatewaySucceeded = true;
-        const payload = res.value.payload;
-        const eng = res.value.engine;
-        const parsed = extractCandidatesFromResponse(payload);
-        for (const item of parsed) {
-          if (isCombinedIdAndNameQuery) {
-            item.fromCombinedQuery = true;
-            // On Scribd Full-Text Search for `"<ID>" "<Name>"`, Scribd's backend index has verified both exact quoted strings inside the document
-            if (eng.isScribdDirectSearch && !payload.includes("No results for ")) {
-              item.confirmedId = true;
-              item.confirmedName = true;
-            }
-          } else if (isIdOnlyQuery && eng.isScribdDirectSearch && !payload.includes("No results for ")) {
-            item.confirmedId = true;
-          }
-          collectedCandidates.push(item);
-        }
+    for (let i = 0; i < engines.length; i += 1) {
+      if (parentSignal && parentSignal.aborted) {
+        throw new DOMException("Aborted", "AbortError");
       }
-    }
-
-    // If first wave had zero gateway successes, fall back to DuckDuckGo / Bing:
-    if (!anyGatewaySucceeded) {
-      for (let i = 2; i < engines.length; i += 1) {
-        if (parentSignal && parentSignal.aborted) {
-          throw new DOMException("Aborted", "AbortError");
-        }
-        try {
-          const payload = await fetchTargetWithFallback(engines[i].url, parentSignal, fetchImpl);
-          if (payload) {
-            anyGatewaySucceeded = true;
-            const parsed = extractCandidatesFromResponse(payload);
-            for (const item of parsed) {
-              if (isCombinedIdAndNameQuery) {
-                item.fromCombinedQuery = true;
+      const eng = engines[i];
+      try {
+        const payload = await fetchTargetWithFallback(eng.url, parentSignal, fetchImpl);
+        if (payload) {
+          anyGatewaySucceeded = true;
+          const parsed = extractCandidatesFromResponse(payload);
+          for (const item of parsed) {
+            if (isCombinedIdAndNameQuery) {
+              item.fromCombinedQuery = true;
+              if (eng.isScribdDirectSearch) {
+                item.confirmedId = true;
+                item.confirmedName = true;
               }
-              collectedCandidates.push(item);
+            } else if (isIdOnlyQuery && eng.isScribdDirectSearch) {
+              item.confirmedId = true;
             }
-            if (collectedCandidates.length > 0) {
-              break;
-            }
+            collectedCandidates.push(item);
           }
-        } catch {
-          // Try next search engine
+          // As soon as a mirror returns a valid search page (even if 0 results), stop trying slower mirrors!
+          break;
         }
+      } catch {
+        // Rotate to next mirror in `engines`
       }
     }
 
@@ -883,12 +878,9 @@
   }
 
   /**
-   * Orchestrates the complete Multi-Query + Deep Document Verification pipeline:
-   * 1. Query A (Combined ID + Name): `"<studentId>" "<studentName>"`
-   * 2. Query B (Combined ID + Normalized ASCII Name if diacritics present): `"<studentId>" "<normalizedName>"`
-   * 3. Query C (Exact ID Broad Discovery): `"<studentId>"`
-   * 4. Deep Verification: For any non-confirmed candidate URL discovered with `hasId === true` where `hasName`
-   *    is not yet confirmed, fetches the target document page via `r.jina.ai` or checks combined-query match.
+   * Orchestrates the fast Multi-Query discovery pipeline (~3.5-4.5s total execution):
+   * Runs Combined (`"<studentId>" "<studentName>"`) and Broad ID (`"<studentId>"`) concurrently
+   * across distinct regional Scribd mirrors so they never collide on the same upstream mirror.
    */
   async function runExposureSearch(studentId, studentName, options) {
     const opts = options || {};
@@ -902,13 +894,15 @@
         label: "Combined exact Student ID + Name query",
         text: '"' + studentId + '" "' + studentName + '"',
         isCombined: true,
-        isIdOnly: false
+        isIdOnly: false,
+        mirrorOffset: 0
       },
       {
         label: "Exact 10-digit Student ID broad discovery query",
         text: '"' + studentId + '"',
         isCombined: false,
-        isIdOnly: true
+        isIdOnly: true,
+        mirrorOffset: 1
       }
     ];
 
@@ -917,14 +911,19 @@
         label: "Normalized Vietnamese ASCII ID + Name query",
         text: '"' + studentId + '" "' + normalizedName + '"',
         isCombined: true,
-        isIdOnly: false
+        isIdOnly: false,
+        mirrorOffset: 2
       });
     }
 
-    onProgress("Querying public search indices via read-only HTTPS CORS gateways...");
+    onProgress(
+      currentUiLang === "vi"
+        ? "Đang đối chiếu chỉ mục công khai qua cổng HTTPS chỉ đọc..."
+        : "Querying public document indices via read-only HTTPS gateways..."
+    );
 
     const querySettled = await Promise.allSettled(
-      queries.map((q) => executeSearchQuery(q, signal, fetchImpl))
+      queries.map((q) => executeSearchQuery(q, q.mirrorOffset, signal, fetchImpl))
     );
 
     if (signal && signal.aborted) {
@@ -972,7 +971,7 @@
       }
     }
 
-    // Deep verification pass for candidate documents where ID matched but Name is not yet confirmed
+    // Deep verification pass only for non-Scribd candidate URLs where ID matched in snippet but Name wasn't shown
     const candidatesList = Array.from(mergedByKey.values());
     const deepVerifyTargets = candidatesList
       .filter((c) => {
@@ -995,7 +994,6 @@
       .slice(0, 2);
 
     if (deepVerifyTargets.length > 0) {
-      onProgress("Performing deep verification on discovered public documents...");
       await Promise.allSettled(
         deepVerifyTargets.map(async (target) => {
           try {
@@ -1004,7 +1002,7 @@
               target.bodyText = docText.slice(0, MAX_PAYLOAD_CHARS);
             }
           } catch {
-            // Direct page fetch may be blocked by upstream bot-wall
+            // Ignore blocked upstream pages
           }
         })
       );
@@ -1042,6 +1040,30 @@
   }
 
   /**
+   * Helper to create a bilingual element with separate `[data-i18n="en"]` and `[data-i18n="vi"]` spans
+   * so switching languages updates dynamic findings instantaneously with zero mixed-language clutter.
+   */
+  function appendBilingualText(doc, parentEl, textEn, textVi) {
+    const spanEn = doc.createElement("span");
+    spanEn.setAttribute("data-i18n", "en");
+    spanEn.textContent = textEn;
+    if (currentUiLang !== "en") {
+      spanEn.hidden = true;
+    }
+
+    const spanVi = doc.createElement("span");
+    spanVi.setAttribute("data-i18n", "vi");
+    spanVi.setAttribute("lang", "vi");
+    spanVi.textContent = textVi;
+    if (currentUiLang !== "vi") {
+      spanVi.hidden = true;
+    }
+
+    parentEl.appendChild(spanEn);
+    parentEl.appendChild(spanVi);
+  }
+
+  /**
    * Builds a single finding row DOM element using ONLY `document.createElement` and `textContent`.
    * Zero raw snippets or third-party PII are ever rendered (CWE-79, CWE-200).
    */
@@ -1064,7 +1086,7 @@
 
     const matchedBadge = doc.createElement("span");
     matchedBadge.className = "matched-pill";
-    matchedBadge.textContent = finding.matchedFieldsEn + " / " + finding.matchedFieldsVi;
+    appendBilingualText(doc, matchedBadge, finding.matchedFieldsEn, finding.matchedFieldsVi);
     badgesGroup.appendChild(matchedBadge);
 
     topBar.appendChild(badgesGroup);
@@ -1081,16 +1103,10 @@
     sourceHeading.textContent = finding.sourceName;
     item.appendChild(sourceHeading);
 
-    const reasonEn = doc.createElement("p");
-    reasonEn.className = "finding-reason";
-    reasonEn.textContent = finding.reasonEn;
-    item.appendChild(reasonEn);
-
-    const reasonVi = doc.createElement("p");
-    reasonVi.className = "finding-reason-vi";
-    reasonVi.setAttribute("lang", "vi");
-    reasonVi.textContent = finding.reasonVi;
-    item.appendChild(reasonVi);
+    const reasonPara = doc.createElement("p");
+    reasonPara.className = "finding-reason";
+    appendBilingualText(doc, reasonPara, finding.reasonEn, finding.reasonVi);
+    item.appendChild(reasonPara);
 
     const linkRow = doc.createElement("div");
     linkRow.className = "finding-link-row";
@@ -1121,20 +1137,24 @@
 
     const manualTargets = [
       {
-        label: "Verify on Yahoo Search (ID + Name)",
+        labelEn: "Verify on Scribd (ID + Name)",
+        labelVi: "Kiểm tra trên Scribd (MSSV + Họ tên)",
+        url: "https://www.scribd.com/search?query=" + combinedQuery
+      },
+      {
+        labelEn: "Verify on Google (ID + Name)",
+        labelVi: "Kiểm tra trên Google (MSSV + Họ tên)",
+        url: "https://www.google.com/search?q=" + combinedQuery
+      },
+      {
+        labelEn: "Verify on Yahoo Search (ID + Name)",
+        labelVi: "Kiểm tra trên Yahoo Search (MSSV + Họ tên)",
         url: "https://search.yahoo.com/search?p=" + combinedQuery
       },
       {
-        label: "Verify on DuckDuckGo (ID + Name)",
-        url: "https://duckduckgo.com/?q=" + combinedQuery
-      },
-      {
-        label: "Verify on Bing (Exact 10-Digit ID)",
+        labelEn: "Verify on Bing (Exact 10-Digit ID)",
+        labelVi: "Kiểm tra trên Bing (Mã số sinh viên)",
         url: "https://www.bing.com/search?q=" + idOnlyQuery
-      },
-      {
-        label: "Verify on Google (ID + Name)",
-        url: "https://www.google.com/search?q=" + combinedQuery
       }
     ];
 
@@ -1146,18 +1166,54 @@
       anchor.setAttribute("href", safeUrl);
       anchor.setAttribute("target", "_blank");
       anchor.setAttribute("rel", "noopener noreferrer");
-      anchor.textContent = target.label;
+      appendBilingualText(doc, anchor, target.labelEn, target.labelVi);
       containerEl.appendChild(anchor);
     }
   }
 
   /**
-   * Initializes DOM bindings and clickjacking defense when running inside a browser document.
+   * Applies the active language (`"en"` or `"vi"`) across all `[data-i18n]` elements and toggle buttons.
+   * Stores nothing in `localStorage`, `sessionStorage`, or `cookies` (strict zero-storage compliance).
+   */
+  function applyUiLanguage(doc, targetLang) {
+    const lang = targetLang === "vi" ? "vi" : "en";
+    currentUiLang = lang;
+
+    if (doc.documentElement) {
+      doc.documentElement.setAttribute("lang", lang);
+      doc.documentElement.setAttribute("data-lang", lang);
+    }
+
+    const i18nNodes = doc.querySelectorAll("[data-i18n]");
+    for (const node of i18nNodes) {
+      const nodeLang = node.getAttribute("data-i18n");
+      node.hidden = nodeLang !== lang;
+    }
+
+    const langButtons = doc.querySelectorAll("[data-set-lang]");
+    for (const btn of langButtons) {
+      const btnLang = btn.getAttribute("data-set-lang");
+      btn.setAttribute("aria-pressed", btnLang === lang ? "true" : "false");
+    }
+  }
+
+  /**
+   * Initializes DOM bindings, language switcher, and clickjacking defense inside a browser document.
    */
   function initBrowserDom() {
     if (typeof window === "undefined" || typeof document === "undefined") {
       return;
     }
+
+    // Bind EN / VI language switcher buttons on every page (index.html, disclaimer.html, 404.html)
+    const langButtons = document.querySelectorAll("[data-set-lang]");
+    for (const btn of langButtons) {
+      btn.addEventListener("click", () => {
+        const chosen = btn.getAttribute("data-set-lang");
+        applyUiLanguage(document, chosen);
+      });
+    }
+    applyUiLanguage(document, currentUiLang);
 
     const form = document.getElementById("exposure-form");
     const idInput = document.getElementById("student-id");
@@ -1210,26 +1266,26 @@
     let activeAbortController = null;
     let lastSearchTimestamp = 0;
 
-    function setFieldError(inputEl, errorEl, messageText) {
+    function setFieldError(inputEl, errorEl, errorEn, errorVi) {
       if (!inputEl || !errorEl) return;
-      if (messageText) {
+      clearElementChildren(errorEl);
+      if (errorEn || errorVi) {
         inputEl.setAttribute("aria-invalid", "true");
-        errorEl.textContent = messageText;
+        appendBilingualText(document, errorEl, errorEn, errorVi || errorEn);
         errorEl.hidden = false;
       } else {
         inputEl.removeAttribute("aria-invalid");
-        errorEl.textContent = "";
         errorEl.hidden = true;
       }
     }
 
-    function setGeneralError(messageText) {
+    function setGeneralError(errorEn, errorVi) {
       if (!generalError) return;
-      if (messageText) {
-        generalError.textContent = messageText;
+      clearElementChildren(generalError);
+      if (errorEn || errorVi) {
+        appendBilingualText(document, generalError, errorEn, errorVi || errorEn);
         generalError.hidden = false;
       } else {
-        generalError.textContent = "";
         generalError.hidden = true;
       }
     }
@@ -1239,7 +1295,7 @@
         statusSection.hidden = !isLoading;
         loadingPanel.hidden = !isLoading;
       }
-      if (loadingStep && stepMessage) {
+      if (loadingStep && stepMessage !== undefined) {
         loadingStep.textContent = stepMessage;
       }
       if (submitBtn) {
@@ -1251,13 +1307,13 @@
     }
 
     idInput.addEventListener("input", () => {
-      setFieldError(idInput, idError, "");
-      setGeneralError("");
+      setFieldError(idInput, idError, "", "");
+      setGeneralError("", "");
     });
 
     nameInput.addEventListener("input", () => {
-      setFieldError(nameInput, nameError, "");
-      setGeneralError("");
+      setFieldError(nameInput, nameError, "", "");
+      setGeneralError("", "");
     });
 
     if (cancelBtn) {
@@ -1267,7 +1323,10 @@
           activeAbortController = null;
         }
         setLoadingState(false, "");
-        setGeneralError("Search cancelled by user. / Đã dừng tìm kiếm theo yêu cầu.");
+        setGeneralError(
+          "Search cancelled by user.",
+          "Đã hủy tìm kiếm theo yêu cầu người dùng."
+        );
       });
     }
 
@@ -1277,9 +1336,9 @@
           activeAbortController.abort();
           activeAbortController = null;
         }
-        setFieldError(idInput, idError, "");
-        setFieldError(nameInput, nameError, "");
-        setGeneralError("");
+        setFieldError(idInput, idError, "", "");
+        setFieldError(nameInput, nameError, "", "");
+        setGeneralError("", "");
         setLoadingState(false, "");
         if (resultsSection) resultsSection.hidden = true;
         clearElementChildren(findingsContainer);
@@ -1291,9 +1350,9 @@
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      setFieldError(idInput, idError, "");
-      setFieldError(nameInput, nameError, "");
-      setGeneralError("");
+      setFieldError(idInput, idError, "", "");
+      setFieldError(nameInput, nameError, "", "");
+      setGeneralError("", "");
 
       const validation = validateInputs(idInput.value, nameInput.value);
       if (!validation.valid) {
@@ -1301,14 +1360,16 @@
           setFieldError(
             idInput,
             idError,
-            validation.idCheck.errorEn + " / " + validation.idCheck.errorVi
+            validation.idCheck.errorEn,
+            validation.idCheck.errorVi
           );
         }
         if (!validation.nameCheck.valid) {
           setFieldError(
             nameInput,
             nameError,
-            validation.nameCheck.errorEn + " / " + validation.nameCheck.errorVi
+            validation.nameCheck.errorEn,
+            validation.nameCheck.errorVi
           );
         }
         const firstInvalid = !validation.idCheck.valid ? idInput : nameInput;
@@ -1319,7 +1380,8 @@
       const now = Date.now();
       if (now - lastSearchTimestamp < COOLDOWN_MS) {
         setGeneralError(
-          "Please wait a moment before starting another check to avoid rate-limiting public gateways. / Vui lòng đợi vài giây trước khi kiểm tra tiếp."
+          "Please wait a moment before starting another check to avoid rate-limiting public gateways.",
+          "Vui lòng đợi vài giây trước khi thực hiện lượt kiểm tra tiếp theo."
         );
         return;
       }
@@ -1340,7 +1402,9 @@
 
       setLoadingState(
         true,
-        "Searching public indices for exact 10-digit ID and normalized Vietnamese name..."
+        currentUiLang === "vi"
+          ? "Đang tìm kiếm Mã số sinh viên 10 chữ số và Họ tên chuẩn hóa..."
+          : "Searching public indices for exact 10-digit ID and normalized Vietnamese name..."
       );
 
       try {
@@ -1360,29 +1424,44 @@
         const genuineCount = findings.filter((f) => f.verdict === "GENUINE").length;
         const falsePosCount = findings.filter((f) => f.verdict === "FALSE POSITIVE").length;
 
+        clearElementChildren(resultsSummary);
+
         if (findings.length > 0) {
           if (resultsSummary) {
-            resultsSummary.textContent =
+            appendBilingualText(
+              document,
+              resultsSummary,
               "Found " +
-              String(findings.length) +
-              " public source(s): " +
-              String(genuineCount) +
-              " GENUINE exposure(s), " +
-              String(falsePosCount) +
-              " FALSE POSITIVE / partial match(es). Raw document excerpts are hidden to protect third-party privacy.";
+                String(findings.length) +
+                " public source(s): " +
+                String(genuineCount) +
+                " GENUINE exposure(s), " +
+                String(falsePosCount) +
+                " FALSE POSITIVE / partial match(es). Raw document excerpts are hidden to protect third-party privacy.",
+              "Tìm thấy " +
+                String(findings.length) +
+                " nguồn công khai: " +
+                String(genuineCount) +
+                " kết quả khớp chính xác (GENUINE), " +
+                String(falsePosCount) +
+                " kết quả khớp một phần (FALSE POSITIVE). Đoạn trích văn bản thô đã được ẩn để bảo vệ quyền riêng tư của bên thứ ba."
+            );
           }
           for (let i = 0; i < findings.length; i += 1) {
             const rowEl = createFindingRowElement(document, findings[i], i);
             findingsContainer.appendChild(rowEl);
           }
-          // Even when only FALSE POSITIVE results exist, remind user of accuracy caveats
           if (genuineCount === 0 && emptyStatePanel) {
             emptyStatePanel.hidden = false;
           }
         } else {
           if (resultsSummary) {
-            resultsSummary.textContent =
-              "0 matching public exposures found in checked indices. Remember: absence of results does not prove your data is not exposed.";
+            appendBilingualText(
+              document,
+              resultsSummary,
+              "0 matching public exposures found in checked indices. Remember: absence of results does not prove your data is not exposed.",
+              "0 kết quả lộ dữ liệu khớp trên các chỉ mục đã kiểm tra. Lưu ý: việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ."
+            );
           }
           if (emptyStatePanel) {
             emptyStatePanel.hidden = false;
@@ -1398,9 +1477,14 @@
         }
         setLoadingState(false, "");
         if (resultsSection) resultsSection.hidden = false;
+        clearElementChildren(resultsSummary);
         if (resultsSummary) {
-          resultsSummary.textContent =
-            "Automated gateways encountered a network error. Remember: absence of results does not prove your data is not exposed.";
+          appendBilingualText(
+            document,
+            resultsSummary,
+            "Automated gateways encountered a network error. Remember: absence of results does not prove your data is not exposed.",
+            "Cổng truy vấn tự động gặp sự cố kết nối. Lưu ý: việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ."
+          );
         }
         if (emptyStatePanel) {
           emptyStatePanel.hidden = false;
@@ -1441,7 +1525,8 @@
     extractCandidatesFromResponse: extractCandidatesFromResponse,
     buildProxyGateways: buildProxyGateways,
     buildSearchEngineUrls: buildSearchEngineUrls,
-    runExposureSearch: runExposureSearch
+    runExposureSearch: runExposureSearch,
+    applyUiLanguage: applyUiLanguage
   };
 
   if (typeof module !== "undefined" && module.exports) {
