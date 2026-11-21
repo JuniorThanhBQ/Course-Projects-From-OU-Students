@@ -445,4 +445,12 @@ test("8. Issue #11 Regressions: Zero Synthetic Verdicts, Query-Echo Stripping, N
     assert.equal(q1Mirrors.includes(url), false, "Query 0 and Query 1 Scribd mirrors must not overlap");
     assert.equal(q2Mirrors.includes(url), false, "Query 0 and Query 2 Scribd mirrors must not overlap");
   }
+
+  // 8.7: Space-separated Scribd PDF table glyph extraction ("5 4 2 3 5 1 0 5 0 1 6 4 V Ă N T R U N G T H À N H")
+  const spacedPdfRow =
+    "5 3 2 3 5 1 0 5 0 1 6 3 P H Ạ M T Ấ N T H À N H 0 4/1 0/2 0 0 5 I T 2 3 0 3 1 0 8.5 9 c h í n " +
+    "5 4 2 3 5 1 0 5 0 1 6 4 V Ă N T R U N G T H À N H 1 3/1 1/2 0 0 5 I T 2 3 0 3 1 0 9 9.3 c h í n.b a";
+  assert.equal(app.containsExactStudentId(spacedPdfRow, "2351050164"), true);
+  assert.equal(app.containsNormalizedStudentName(spacedPdfRow, "Van Trung Thanh"), true);
+  assert.equal(app.containsNormalizedStudentName(spacedPdfRow, "Văn Trung Thành"), true);
 });
