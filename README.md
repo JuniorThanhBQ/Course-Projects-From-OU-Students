@@ -85,6 +85,13 @@ Here are some useful resources that might help you with your studies and IT jour
 This repository is licensed under the MIT License.
 Feel free to explore, use, modify, and share the code for your own learning or projects, as long as you follow the terms of the MIT License.
 
+## III. Featured Web Projects in `vibe-code-project/` (Các dự án Web nổi bật)
+
+| Project / Dự án | Path / Đường dẫn | Live GitHub Pages Route | Automated Verification / Kiểm thử |
+|---|---|---|---|
+| **OU Student ID & Name Exposure Self-Check Tool** (*"Are your student ID and name exposed anywhere?"* / *"Mã số sinh viên và họ tên của bạn có bị lộ ở đâu không?"*) | [`vibe-code-project/ou-student-id-leak-checker/`](./vibe-code-project/ou-student-id-leak-checker/) ([`index.html`](./vibe-code-project/ou-student-id-leak-checker/index.html), [`disclaimer.html`](./vibe-code-project/ou-student-id-leak-checker/disclaimer.html)) | `/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/` | `npm --prefix vibe-code-project/ou-student-id-leak-checker test` |
+| **HCMC OU Campus Route Planner — Bidirectional A* & Contraction Hierarchies** (*Tìm đường đi ngắn nhất giữa các cơ sở Trường Đại học Mở TP.HCM*) | [`vibe-code-project/hcmc-ou-a-search/`](./vibe-code-project/hcmc-ou-a-search/) ([`README.md`](./vibe-code-project/hcmc-ou-a-search/README.md)) | `/Course-Projects-From-OU-Students/vibe-code-project/hcmc-ou-a-search/` | `npm --prefix vibe-code-project/hcmc-ou-a-search test` |
+
 ---
 
 **Happy coding, and I hope you find something useful here! 🦊**

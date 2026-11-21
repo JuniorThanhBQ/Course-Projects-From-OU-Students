@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://api.allorigins.win https://api.codetabs.com https://corsproxy.io https://thingproxy.freeboard.io https://r.jina.ai; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://api.allorigins.win https://api.codetabs.com https://r.jina.ai; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none';" />
   <meta name="referrer" content="no-referrer" />
   <meta name="description" content="Are your student ID and name exposed anywhere? Privacy-first self-check web tool for Ho Chi Minh City Open University (OU) students." />
   <title>Are your student ID and name exposed anywhere? — OU Student Privacy Self-Check</title>
@@ -120,8 +120,8 @@
                 <span data-i18n="vi" lang="vi" hidden>Mã số sinh viên (đúng 10 chữ số)</span>
               </label>
               <p id="student-id-hint" class="field-hint">
-                <span data-i18n="en">Exact 10-digit OU format (digits 0–9 only, e.g. <code>1953742285</code>).</span>
-                <span data-i18n="vi" lang="vi" hidden>Đúng 10 chữ số tự nhiên từ 0–9 (ví dụ: <code>1953742285</code>).</span>
+                <span data-i18n="en">Exact 10-digit OU format (digits 0–9 only, e.g. <code>0000000000</code>).</span>
+                <span data-i18n="vi" lang="vi" hidden>Đúng 10 chữ số tự nhiên từ 0–9 (ví dụ: <code>0000000000</code>).</span>
               </p>
               <input
                 type="text"
@@ -130,7 +130,7 @@
                 class="field-input field-input-mono"
                 inputmode="numeric"
                 pattern="[0-9]{10}"
-                maxlength="14"
+                maxlength="10"
                 autocomplete="off"
                 autocorrect="off"
                 autocapitalize="off"
