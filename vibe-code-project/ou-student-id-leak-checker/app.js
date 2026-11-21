@@ -9,10 +9,12 @@
 
   const MAX_PAYLOAD_CHARS = 524288; // 512 KB cap to prevent ReDoS / memory exhaustion (CWE-1333)
   const REQUEST_TIMEOUT_MS = 10000;
+  const WEB_TRACK_TIMEOUT_MS = 15000;
+  const MAX_DEEP_VERIFY_DOCS = 4;
   const COOLDOWN_MS = 2000;
   const STUDENT_ID_REGEX = /^\d{10}$/;
   const STUDENT_NAME_HAS_LETTER_REGEX = /\p{L}/u;
-  const STUDENT_NAME_ALLOWLIST_REGEX = /^[\p{L}\s'.\-]+$/u;
+  const STUDENT_NAME_ALLOWLIST_REGEX = /^[\p{L}\p{M}\s'.\-]+$/u;
 
   const REGIONAL_SCRIBD_HOSTS = new Set([
     "scribd.com",
@@ -138,10 +140,15 @@
   }
 
   /**
-   * Validates the 10-digit Student ID (`^\d{10}$`).
+   * Validates the 10-digit Student ID (`^\d{10}$`), normalizing full-width Unicode digits (０–９) to ASCII (0–9).
    */
   function validateStudentId(rawId) {
-    const trimmed = rawId === null || rawId === undefined ? "" : String(rawId).trim();
+    const trimmed =
+      rawId === null || rawId === undefined
+        ? ""
+        : String(rawId)
+            .replace(/[\uFF10-\uFF19]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
+            .trim();
     if (!trimmed) {
       return {
         valid: false,
@@ -380,26 +387,31 @@
 
   /**
    * Classifies a source URL into a clean, human-readable Source Name & Type (EN and VI).
+   * Uses strict exact or dot-boundary suffix matching to prevent lookalike domain spoofing.
    */
   function classifySource(httpsUrl) {
     try {
       const parsed = new URL(httpsUrl);
       const host = parsed.hostname.toLowerCase();
       const pathLower = parsed.pathname.toLowerCase();
+      const matchesDomain = (h, d) => h === d || h.endsWith("." + d);
 
-      if (host === "www.scribd.com" || host.endsWith("scribd.com")) {
+      if (matchesDomain(host, "scribd.com")) {
         return "Scribd Document Repository (scribd.com)";
       }
-      if (host === "ou.edu.vn" || host.endsWith(".ou.edu.vn")) {
+      if (matchesDomain(host, "ou.edu.vn")) {
         return "HCMC Open University Portal (" + host + ")";
       }
-      if (host.includes("studocu.com")) {
+      if (matchesDomain(host, "studocu.com")) {
         return "Studocu Document Repository (studocu.com)";
       }
-      if (host.includes("slideshare.net")) {
+      if (matchesDomain(host, "slideshare.net")) {
         return "SlideShare Presentation (slideshare.net)";
       }
-      if (host.includes("github.com") || host.includes("githubusercontent.com")) {
+      if (matchesDomain(host, "123docz.net")) {
+        return "123doc Document Repository (123docz.net)";
+      }
+      if (matchesDomain(host, "github.com") || matchesDomain(host, "githubusercontent.com")) {
         return "GitHub Public Repository (" + host + ")";
       }
       if (pathLower.endsWith(".pdf")) {
@@ -443,18 +455,19 @@
       return false;
     }
 
+    const hasBoundedPhrase = (haystack, phrase) =>
+      new RegExp("(^|\\s)" + escapeRegExp(phrase) + "(\\s|$)").test(haystack);
+
     // 1. Exact contiguous phrase on word boundaries
-    const phraseRegex = new RegExp("(^|\\s)" + escapeRegExp(normalizedTarget) + "(\\s|$)");
-    if (phraseRegex.test(normalizedHaystack)) {
+    if (hasBoundedPhrase(normalizedHaystack, normalizedTarget)) {
       return true;
     }
 
-    // 2. For multi-token names (>= 2 words), check if all tokens appear within a narrow window
+    // 2. For multi-token names (>= 2 words), check if all tokens appear within a 75-char proximity window
     const tokens = normalizedTarget.split(" ").filter(Boolean);
     if (tokens.length >= 2) {
       for (const token of tokens) {
-        const tokenRegex = new RegExp("(^|\\s)" + escapeRegExp(token) + "(\\s|$)");
-        if (!tokenRegex.test(normalizedHaystack)) {
+        if (!hasBoundedPhrase(normalizedHaystack, token)) {
           return false;
         }
       }
@@ -462,14 +475,33 @@
       let startIdx = normalizedHaystack.indexOf(firstToken);
       while (startIdx !== -1) {
         const windowSlice = normalizedHaystack.slice(
-          Math.max(0, startIdx - 40),
-          Math.min(normalizedHaystack.length, startIdx + normalizedTarget.length + 60)
+          Math.max(0, startIdx - 35),
+          Math.min(normalizedHaystack.length, startIdx + normalizedTarget.length + 40)
         );
-        const allInWindow = tokens.every((tk) =>
-          new RegExp("(^|\\s)" + escapeRegExp(tk) + "(\\s|$)").test(windowSlice)
-        );
+        const allInWindow = tokens.every((tk) => hasBoundedPhrase(windowSlice, tk));
         if (allInWindow) {
-          return true;
+          // Guard against single-character initial noise (e.g. "a" in "Nguyen Van A"):
+          // Any 1-char token must appear immediately adjacent to its neighbouring name token in order.
+          let singleCharValid = true;
+          for (let idx = 0; idx < tokens.length; idx += 1) {
+            if (tokens[idx].length === 1) {
+              const matchesPrev =
+                idx > 0 && hasBoundedPhrase(windowSlice, tokens[idx - 1] + " " + tokens[idx]);
+              const matchesNext =
+                idx < tokens.length - 1 &&
+                hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens[idx + 1]);
+              const matchesReorderedGivenFirst =
+                idx === tokens.length - 1 &&
+                hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens.slice(0, idx).join(" "));
+              if (!matchesPrev && !matchesNext && !matchesReorderedGivenFirst) {
+                singleCharValid = false;
+                break;
+              }
+            }
+          }
+          if (singleCharValid) {
+            return true;
+          }
         }
         startIdx = normalizedHaystack.indexOf(firstToken, startIdx + 1);
       }
@@ -522,6 +554,7 @@
     }
 
     if (hasId && !hasName) {
+      const skippedCap = Boolean(candidate.deepVerifySkipped);
       return {
         url: cleanUrl,
         sourceName: sourceLabel,
@@ -530,8 +563,12 @@
         hasName: false,
         matchedFieldsEn: "Matched: Student ID only",
         matchedFieldsVi: "Chỉ khớp: Mã số sinh viên",
-        reasonEn: "Only the 10-digit number matched; your student name was not confirmed in the public preview (may be an unrelated number or requires manual check).",
-        reasonVi: "Chỉ khớp chuỗi 10 chữ số; không xác nhận thấy họ tên của bạn trong bản xem trước công khai (có thể là dãy số ngẫu nhiên hoặc cần kiểm tra thủ công)."
+        reasonEn: skippedCap
+          ? "Only the 10-digit number matched in the search preview; automated deep verification reached its per-search document cap, so manual verification is recommended."
+          : "Only the 10-digit number matched; your student name was not confirmed in the public preview (may be an unrelated number or requires manual check).",
+        reasonVi: skippedCap
+          ? "Chỉ khớp chuỗi 10 chữ số trong bản xem trước; hệ thống đã đạt giới hạn kiểm tra sâu tự động cho mỗi lượt tìm kiếm, khuyến nghị kiểm tra thủ công."
+          : "Chỉ khớp chuỗi 10 chữ số; không xác nhận thấy họ tên của bạn trong bản xem trước công khai (có thể là dãy số ngẫu nhiên hoặc cần kiểm tra thủ công)."
       };
     }
 
@@ -550,6 +587,7 @@
 
   /**
    * Canonical key for deduplicating URLs (especially Scribd documents with or without slug trailing segments).
+   * Preserves non-tracking query parameters on non-Scribd URLs.
    */
   function getCanonicalDedupeKey(httpsUrl) {
     try {
@@ -558,32 +596,88 @@
       if (parsed.hostname === "www.scribd.com" && scribdMatch && scribdMatch[1]) {
         return "https://www.scribd.com/document/" + scribdMatch[1];
       }
-      return parsed.origin + parsed.pathname.replace(/\/+$/, "");
+      for (const key of Array.from(parsed.searchParams.keys())) {
+        if (TRACKING_PARAMS.has(key.toLowerCase())) {
+          parsed.searchParams.delete(key);
+        }
+      }
+      return parsed.origin + parsed.pathname.replace(/\/+$/, "") + parsed.search;
     } catch {
       return httpsUrl;
     }
   }
 
   /**
+   * Strips echoed search query strings, search page headers, and search input attributes
+   * from raw SERP HTML/Markdown so echoed queries never self-contaminate candidate snippets.
+   */
+  function stripQueryEchoes(rawText, queryContext) {
+    if (!rawText || typeof rawText !== "string") {
+      return "";
+    }
+    let cleaned = rawText;
+
+    // 1. Strip HTML <title> and <h1> blocks that announce search results
+    cleaned = cleaned.replace(
+      /<(?:title|h1)\b[^>]*>[\s\S]{0,300}?(?:Search results|Results for|Kết quả tìm kiếm|Resultados|Hasil pencarian|\/search\?)[\s\S]{0,300}?<\/(?:title|h1)>/gi,
+      " "
+    );
+
+    // 2. Strip search header phrases in plain text / Markdown / HTML
+    cleaned = cleaned.replace(
+      /(?:Search results for|Results for|Showing results for|Kết quả tìm kiếm cho|Resultados de búsqueda para|Hasil pencarian untuk|Resultados para)\s*[:\-]?\s*(?:["'“”«»][^"'“”«»<\n\r]{1,120}["'“”«»]\s*)+/gi,
+      " "
+    );
+    cleaned = cleaned.replace(
+      /(?:Search results for|Results for|Showing results for|Kết quả tìm kiếm cho|Resultados de búsqueda para|Hasil pencarian untuk|Resultados para)\s*[:\-]?\s*[^\n\r<]{1,160}/gi,
+      " "
+    );
+
+    // 3. Strip quoted combined query patterns ("<10-digit-id>" "<name>") echoed in SERP chrome
+    cleaned = cleaned.replace(
+      /(?:["“”]|&quot;)\d{10}(?:["“”]|&quot;)\s+(?:["“”]|&quot;)[^"“”&\n\r<]{2,80}(?:["“”]|&quot;)/g,
+      " "
+    );
+
+    // 4. Strip search engine query URL echoes (e.g. /search?query=... or /search?p=...)
+    cleaned = cleaned.replace(
+      /https?:\/\/[^\s"'<>)]+\/search\?(?:query|p|q)=[^\s"'<>)]+/gi,
+      " "
+    );
+
+    // 5. If explicit queryContext with quoted queryText is provided, strip exact quoted queryText
+    if (queryContext) {
+      const qText = typeof queryContext === "string" ? queryContext : queryContext.queryText;
+      if (qText && typeof qText === "string" && qText.includes('"') && qText.trim().length >= 12) {
+        const escapedQ = escapeRegExp(qText.trim());
+        cleaned = cleaned.replace(new RegExp(escapedQ, "gi"), " ");
+      }
+    }
+
+    return cleaned;
+  }
+
+  /**
    * Parses raw HTML or Jina Reader Markdown text into candidate items `{ url, title, snippet }`
    * without using any dangerous DOM sinks.
    */
-  function extractCandidatesFromResponse(rawPayload) {
+  function extractCandidatesFromResponse(rawPayload, queryContext) {
     if (!rawPayload || typeof rawPayload !== "string") {
       return [];
     }
-    const bounded = rawPayload.slice(0, MAX_PAYLOAD_CHARS);
+    const boundedRaw = rawPayload.slice(0, MAX_PAYLOAD_CHARS);
     // Reject upstream error or zero-result pages
     if (
-      bounded.includes("No results for ") ||
-      bounded.includes("Không có kết quả cho ") ||
-      bounded.includes("No se encontraron resultados para ") ||
-      bounded.includes("Tidak ada hasil untuk ") ||
-      bounded.includes("Nenhum resultado para ") ||
-      bounded.includes("AbuseAlleviationError")
+      boundedRaw.includes("No results for ") ||
+      boundedRaw.includes("Không có kết quả cho ") ||
+      boundedRaw.includes("No se encontraron resultados para ") ||
+      boundedRaw.includes("Tidak ada hasil untuk ") ||
+      boundedRaw.includes("Nenhum resultado para ") ||
+      boundedRaw.includes("AbuseAlleviationError")
     ) {
       return [];
     }
+    const bounded = stripQueryEchoes(boundedRaw, queryContext);
     const candidatesByKey = new Map();
 
     function addCandidate(rawHref, titleText, contextText) {
@@ -591,23 +685,25 @@
       if (!cleanUrl || isIgnoredSearchEngineUrl(cleanUrl)) {
         return;
       }
+      const cleanTitle = stripQueryEchoes(titleText || "", queryContext).replace(/\s+/g, " ").trim();
+      const cleanContext = stripQueryEchoes(contextText || "", queryContext).replace(/\s+/g, " ").trim();
       const key = getCanonicalDedupeKey(cleanUrl);
       const existing = candidatesByKey.get(key);
       if (!existing) {
         candidatesByKey.set(key, {
           url: cleanUrl,
-          title: (titleText || "").slice(0, 300),
-          snippet: (contextText || "").slice(0, 1200)
+          title: cleanTitle.slice(0, 300),
+          snippet: cleanContext.slice(0, 1200)
         });
       } else {
         if (cleanUrl.length > existing.url.length) {
           existing.url = cleanUrl;
         }
-        if (titleText && !existing.title.includes(titleText)) {
-          existing.title = (existing.title + " " + titleText).slice(0, 500);
+        if (cleanTitle && !existing.title.includes(cleanTitle)) {
+          existing.title = (existing.title + " " + cleanTitle).slice(0, 500);
         }
-        if (contextText && !existing.snippet.includes(contextText)) {
-          existing.snippet = (existing.snippet + " " + contextText).slice(0, 2000);
+        if (cleanContext && !existing.snippet.includes(cleanContext)) {
+          existing.snippet = (existing.snippet + " " + cleanContext).slice(0, 2000);
         }
       }
     }
@@ -624,9 +720,19 @@
             continue;
           }
           const title = (anchor.textContent || "").replace(/\s+/g, " ").trim();
-          const container =
-            anchor.closest("li, article, .algo, .dd, .result, .b_algo, .snippet, tr, div") ||
-            anchor.parentElement;
+          let container = anchor.closest("li, article, .algo, .dd, .result, .b_algo, .snippet, tr");
+          if (!container) {
+            const closestDiv = anchor.closest("div");
+            if (
+              closestDiv &&
+              closestDiv.querySelectorAll("a[href]").length <= 3 &&
+              !closestDiv.querySelector("h1")
+            ) {
+              container = closestDiv;
+            } else {
+              container = anchor.parentElement;
+            }
+          }
           const context = container
             ? (container.textContent || "").replace(/\s+/g, " ").trim()
             : title;
@@ -709,46 +815,64 @@
   }
 
   /**
-   * Builds search engine target URLs for a given search query.
-   * Uses regional Scribd mirrors (`vi.scribd.com`, `id.scribd.com`, `pt.scribd.com`, `es.scribd.com`)
-   * first so requests finish in ~3.5-4.5s without hitting `r.jina.ai`'s rate-limit on `www.scribd.com`
-   * or waiting 16s on Yahoo Search unless fallback is needed.
+   * Builds Track 1 (Scribd regional mirror) search URLs using a non-overlapping stride of 2
+   * across `SCRIBD_SEARCH_MIRRORS` so parallel queries never collide on the same upstream mirror.
    */
-  function buildSearchEngineUrls(queryText, mirrorIndexOffset) {
+  function buildScribdTrackUrls(queryText, mirrorIndexOffset) {
     const q = encodeURIComponent(queryText);
     const offset = typeof mirrorIndexOffset === "number" ? mirrorIndexOffset : 0;
-    const mirror1 = SCRIBD_SEARCH_MIRRORS[offset % SCRIBD_SEARCH_MIRRORS.length];
-    const mirror2 = SCRIBD_SEARCH_MIRRORS[(offset + 1) % SCRIBD_SEARCH_MIRRORS.length];
-    const mirror3 = SCRIBD_SEARCH_MIRRORS[(offset + 2) % SCRIBD_SEARCH_MIRRORS.length];
+    const baseIndex = (offset * 2) % SCRIBD_SEARCH_MIRRORS.length;
+    const mirror1 = SCRIBD_SEARCH_MIRRORS[baseIndex];
+    const mirror2 = SCRIBD_SEARCH_MIRRORS[(baseIndex + 1) % SCRIBD_SEARCH_MIRRORS.length];
 
     return [
       {
         engine: "Scribd Index (" + mirror1 + ")",
         url: mirror1 + "/search?query=" + q,
-        isScribdDirectSearch: true
+        isScribdDirectSearch: true,
+        track: "scribd",
+        timeoutMs: REQUEST_TIMEOUT_MS
       },
       {
         engine: "Scribd Mirror (" + mirror2 + ")",
         url: mirror2 + "/search?query=" + q,
-        isScribdDirectSearch: true
-      },
-      {
-        engine: "Scribd Mirror (" + mirror3 + ")",
-        url: mirror3 + "/search?query=" + q,
-        isScribdDirectSearch: true
-      },
-      {
-        engine: "Yahoo Search",
-        url: "https://search.yahoo.com/search?p=" + q + "&n=15",
-        isScribdDirectSearch: false
+        isScribdDirectSearch: true,
+        track: "scribd",
+        timeoutMs: REQUEST_TIMEOUT_MS
       }
     ];
   }
 
   /**
+   * Builds Track 2 (General Web & Academic Repository) search URLs (Yahoo Web Search indexing
+   * *.ou.edu.vn, studocu.com, slideshare.net, 123docz.net, github.com, and public PDFs/spreadsheets).
+   */
+  function buildWebTrackUrls(queryText) {
+    const q = encodeURIComponent(queryText);
+    return [
+      {
+        engine: "Yahoo Search",
+        url: "https://search.yahoo.com/search?p=" + q + "&n=15",
+        isScribdDirectSearch: false,
+        track: "web",
+        timeoutMs: WEB_TRACK_TIMEOUT_MS
+      }
+    ];
+  }
+
+  /**
+   * Builds combined Track 1 (Scribd mirrors) + Track 2 (Yahoo Web Search) target URLs for a query.
+   */
+  function buildSearchEngineUrls(queryText, mirrorIndexOffset) {
+    return buildScribdTrackUrls(queryText, mirrorIndexOffset).concat(
+      buildWebTrackUrls(queryText)
+    );
+  }
+
+  /**
    * Executes a single CORS-simple GET request (no custom headers to avoid OPTIONS preflight failures).
    */
-  async function fetchViaGateway(gateway, parentSignal, fetchImpl) {
+  async function fetchViaGateway(gateway, parentSignal, fetchImpl, timeoutMs) {
     const effectiveFetch = fetchImpl || (typeof fetch !== "undefined" ? fetch : null);
     if (!effectiveFetch) {
       throw new Error("Fetch API unavailable");
@@ -757,8 +881,10 @@
       throw new DOMException("Aborted", "AbortError");
     }
 
+    const effectiveTimeoutMs =
+      typeof timeoutMs === "number" && timeoutMs > 0 ? timeoutMs : REQUEST_TIMEOUT_MS;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), effectiveTimeoutMs);
     const onParentAbort = () => controller.abort();
     if (parentSignal) {
       parentSignal.addEventListener("abort", onParentAbort, { once: true });
@@ -804,9 +930,9 @@
 
   /**
    * Fetches a target URL via the primary gateway (`https://r.jina.ai/`) first,
-   * falling back to secondary gateways only if needed.
+   * falling back to secondary gateways (`CodeTabs`, `AllOrigins`) when rate-limited or 403'd.
    */
-  async function fetchTargetWithFallback(targetUrl, parentSignal, fetchImpl) {
+  async function fetchTargetWithFallback(targetUrl, parentSignal, fetchImpl, timeoutMs) {
     const gateways = buildProxyGateways(targetUrl);
 
     for (let i = 0; i < gateways.length; i += 1) {
@@ -814,62 +940,114 @@
         throw new DOMException("Aborted", "AbortError");
       }
       try {
-        const text = await fetchViaGateway(gateways[i], parentSignal, fetchImpl);
+        const text = await fetchViaGateway(gateways[i], parentSignal, fetchImpl, timeoutMs);
         if (text) {
           return text;
         }
       } catch {
-        // If primary Jina Reader returned 403 for this specific target host, let caller rotate mirror first
-        if (i === 0 && targetUrl.includes("scribd.com/search")) {
-          break;
-        }
+        // Continue to next fallback gateway (CodeTabs -> AllOrigins)
       }
     }
     throw new Error("Gateway failed for target: " + targetUrl);
   }
 
   /**
-   * Runs a search query quickly by rotating across fast regional Scribd search mirrors first (~3.5s),
-   * stopping as soon as one mirror succeeds, and falling back to Yahoo Search only if all Scribd mirrors fail.
+   * Runs Track 1 (fast regional Scribd search mirrors) and Track 2 (General Web / Yahoo Search)
+   * concurrently so non-Scribd sources (*.ou.edu.vn, studocu.com, slideshare.net, 123docz.net, PDFs)
+   * are always queried alongside Scribd without blocking progressive Track 1 results.
    */
-  async function executeSearchQuery(queryObj, mirrorOffset, parentSignal, fetchImpl) {
+  async function executeSearchQuery(queryObj, mirrorOffset, parentSignal, fetchImpl, onTrackCandidates) {
     const queryText = typeof queryObj === "string" ? queryObj : queryObj.text;
     const isCombinedIdAndNameQuery = Boolean(queryObj && queryObj.isCombined);
     const isIdOnlyQuery = Boolean(queryObj && queryObj.isIdOnly);
+    const includeWebTrack =
+      queryObj && typeof queryObj === "object" && "includeWebTrack" in queryObj
+        ? Boolean(queryObj.includeWebTrack)
+        : true;
 
     const engines = buildSearchEngineUrls(queryText, mirrorOffset);
+    const scribdEngines = engines.filter((e) => e.isScribdDirectSearch);
+    const webEngines = includeWebTrack ? engines.filter((e) => !e.isScribdDirectSearch) : [];
+
     const collectedCandidates = [];
     let anyGatewaySucceeded = false;
 
-    for (let i = 0; i < engines.length; i += 1) {
-      if (parentSignal && parentSignal.aborted) {
-        throw new DOMException("Aborted", "AbortError");
-      }
-      const eng = engines[i];
-      try {
-        const payload = await fetchTargetWithFallback(eng.url, parentSignal, fetchImpl);
-        if (payload) {
-          anyGatewaySucceeded = true;
-          const parsed = extractCandidatesFromResponse(payload);
-          for (const item of parsed) {
-            if (isCombinedIdAndNameQuery) {
-              item.fromCombinedQuery = true;
-              if (eng.isScribdDirectSearch) {
-                item.confirmedId = true;
-                item.confirmedName = true;
-              }
-            } else if (isIdOnlyQuery && eng.isScribdDirectSearch) {
-              item.confirmedId = true;
-            }
-            collectedCandidates.push(item);
-          }
-          // As soon as a mirror returns a valid search page (even if 0 results), stop trying slower mirrors!
-          break;
+    async function runScribdTrack() {
+      const trackCandidates = [];
+      let trackSucceeded = false;
+      for (let i = 0; i < scribdEngines.length; i += 1) {
+        if (parentSignal && parentSignal.aborted) {
+          throw new DOMException("Aborted", "AbortError");
         }
-      } catch {
-        // Rotate to next mirror in `engines`
+        const eng = scribdEngines[i];
+        try {
+          const payload = await fetchTargetWithFallback(
+            eng.url,
+            parentSignal,
+            fetchImpl,
+            eng.timeoutMs || REQUEST_TIMEOUT_MS
+          );
+          if (payload) {
+            anyGatewaySucceeded = true;
+            trackSucceeded = true;
+            const parsed = extractCandidatesFromResponse(payload, { queryText: queryText });
+            for (const item of parsed) {
+              item.fromCombinedQuery = isCombinedIdAndNameQuery;
+              item.fromIdOnlyQuery = isIdOnlyQuery;
+              item.track = "scribd";
+              trackCandidates.push(item);
+              collectedCandidates.push(item);
+            }
+            // Stop trying slower Scribd mirrors as soon as one healthy mirror responds
+            break;
+          }
+        } catch {
+          // Rotate to next regional Scribd mirror
+        }
+      }
+      if (typeof onTrackCandidates === "function") {
+        onTrackCandidates("scribd", trackCandidates, trackSucceeded);
       }
     }
+
+    async function runWebTrack() {
+      const trackCandidates = [];
+      let trackSucceeded = false;
+      for (let i = 0; i < webEngines.length; i += 1) {
+        if (parentSignal && parentSignal.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+        const eng = webEngines[i];
+        try {
+          const payload = await fetchTargetWithFallback(
+            eng.url,
+            parentSignal,
+            fetchImpl,
+            eng.timeoutMs || WEB_TRACK_TIMEOUT_MS
+          );
+          if (payload) {
+            anyGatewaySucceeded = true;
+            trackSucceeded = true;
+            const parsed = extractCandidatesFromResponse(payload, { queryText: queryText });
+            for (const item of parsed) {
+              item.fromCombinedQuery = isCombinedIdAndNameQuery;
+              item.fromIdOnlyQuery = isIdOnlyQuery;
+              item.track = "web";
+              trackCandidates.push(item);
+              collectedCandidates.push(item);
+            }
+            break;
+          }
+        } catch {
+          // Fallback to next web engine if configured
+        }
+      }
+      if (webEngines.length > 0 && typeof onTrackCandidates === "function") {
+        onTrackCandidates("web", trackCandidates, trackSucceeded);
+      }
+    }
+
+    await Promise.allSettled([runScribdTrack(), runWebTrack()]);
 
     return {
       anyGatewaySucceeded: anyGatewaySucceeded,
@@ -878,14 +1056,25 @@
   }
 
   /**
-   * Orchestrates the fast Multi-Query discovery pipeline (~3.5-4.5s total execution):
+   * Determines whether the `#empty-state-panel` should be displayed.
+   * Returns `true` ONLY when `findings` is an empty array (`findings.length === 0`).
+   */
+  function shouldShowEmptyStatePanel(findings) {
+    return Array.isArray(findings) && findings.length === 0;
+  }
+
+  /**
+   * Orchestrates the parallel Multi-Track discovery pipeline:
    * Runs Combined (`"<studentId>" "<studentName>"`) and Broad ID (`"<studentId>"`) concurrently
-   * across distinct regional Scribd mirrors so they never collide on the same upstream mirror.
+   * across non-overlapping regional Scribd mirrors (Track 1) and General Web search (Track 2),
+   * followed by deep document verification of candidate pages before grading verdicts.
    */
   async function runExposureSearch(studentId, studentName, options) {
     const opts = options || {};
     const signal = opts.signal || null;
     const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : function () {};
+    const onPartialFindings =
+      typeof opts.onPartialFindings === "function" ? opts.onPartialFindings : null;
     const fetchImpl = opts.fetchImpl || null;
 
     const normalizedName = normalizeText(studentName);
@@ -895,14 +1084,16 @@
         text: '"' + studentId + '" "' + studentName + '"',
         isCombined: true,
         isIdOnly: false,
-        mirrorOffset: 0
+        mirrorOffset: 0,
+        includeWebTrack: true
       },
       {
         label: "Exact 10-digit Student ID broad discovery query",
         text: '"' + studentId + '"',
         isCombined: false,
         isIdOnly: true,
-        mirrorOffset: 1
+        mirrorOffset: 1,
+        includeWebTrack: true
       }
     ];
 
@@ -912,7 +1103,8 @@
         text: '"' + studentId + '" "' + normalizedName + '"',
         isCombined: true,
         isIdOnly: false,
-        mirrorOffset: 2
+        mirrorOffset: 2,
+        includeWebTrack: false
       });
     }
 
@@ -922,8 +1114,62 @@
         : "Querying public document indices via read-only HTTPS gateways..."
     );
 
+    const partialByKey = new Map();
+    let scribdTrackCompletedCount = 0;
+
+    function handleTrackCandidates(trackName, trackCandidates) {
+      if (signal && signal.aborted) {
+        return;
+      }
+      for (const cand of trackCandidates) {
+        const key = getCanonicalDedupeKey(cand.url);
+        const existing = partialByKey.get(key);
+        if (!existing) {
+          partialByKey.set(key, {
+            url: cand.url,
+            title: cand.title || "",
+            snippet: cand.snippet || "",
+            bodyText: ""
+          });
+        } else {
+          existing.title = (existing.title + " " + (cand.title || "")).slice(0, 600);
+          existing.snippet = (existing.snippet + " " + (cand.snippet || "")).slice(0, 2400);
+        }
+      }
+
+      if (trackName === "scribd") {
+        scribdTrackCompletedCount += 1;
+        if (scribdTrackCompletedCount === 1) {
+          onProgress(
+            currentUiLang === "vi"
+              ? "Đang quét mạng công khai & cổng ou.edu.vn..."
+              : "Scanning public web & ou.edu.vn..."
+          );
+        }
+        if (onPartialFindings) {
+          const preliminary = [];
+          for (const candidate of partialByKey.values()) {
+            const evaluated = evaluateCandidateVerdict(candidate, studentId, studentName);
+            if (evaluated) {
+              preliminary.push(evaluated);
+            }
+          }
+          if (preliminary.length > 0) {
+            preliminary.sort((a, b) => {
+              if (a.verdict === "GENUINE" && b.verdict !== "GENUINE") return -1;
+              if (a.verdict !== "GENUINE" && b.verdict === "GENUINE") return 1;
+              return a.url.localeCompare(b.url);
+            });
+            onPartialFindings(preliminary);
+          }
+        }
+      }
+    }
+
     const querySettled = await Promise.allSettled(
-      queries.map((q) => executeSearchQuery(q, q.mirrorOffset, signal, fetchImpl))
+      queries.map((q) =>
+        executeSearchQuery(q, q.mirrorOffset, signal, fetchImpl, handleTrackCandidates)
+      )
     );
 
     if (signal && signal.aborted) {
@@ -948,8 +1194,7 @@
               snippet: cand.snippet || "",
               bodyText: "",
               fromCombinedQuery: Boolean(cand.fromCombinedQuery),
-              confirmedId: Boolean(cand.confirmedId),
-              confirmedName: Boolean(cand.confirmedName)
+              deepVerifySkipped: false
             });
           } else {
             if (cand.url.length > existing.url.length) {
@@ -960,46 +1205,49 @@
             if (cand.fromCombinedQuery) {
               existing.fromCombinedQuery = true;
             }
-            if (cand.confirmedId) {
-              existing.confirmedId = true;
-            }
-            if (cand.confirmedName) {
-              existing.confirmedName = true;
-            }
           }
         }
       }
     }
 
-    // Deep verification pass only for non-Scribd candidate URLs where ID matched in snippet but Name wasn't shown
+    // Deep document verification pass for candidates where ID or Name was not yet both confirmed in snippet
     const candidatesList = Array.from(mergedByKey.values());
-    const deepVerifyTargets = candidatesList
-      .filter((c) => {
-        if (c.confirmedId && c.confirmedName) {
-          return false;
-        }
-        const textSoFar = [c.title, c.snippet, c.url].join(" ");
-        const idFound = c.confirmedId || containsExactStudentId(textSoFar, studentId);
-        const nameFound = c.confirmedName || containsNormalizedStudentName(textSoFar, studentName);
-        if (idFound && nameFound) {
-          return false;
-        }
-        if (c.fromCombinedQuery && idFound) {
-          c.confirmedId = true;
-          c.confirmedName = true;
-          return false;
-        }
-        return idFound && !nameFound && !c.url.includes("scribd.com");
-      })
-      .slice(0, 2);
+    const idOnlyCandidates = [];
+    const nameOnlyCandidates = [];
+
+    for (const c of candidatesList) {
+      const textSoFar = [c.title, c.snippet, c.url].join(" ");
+      const idFound = containsExactStudentId(textSoFar, studentId);
+      const nameFound = containsNormalizedStudentName(textSoFar, studentName);
+      if (idFound && nameFound) {
+        continue;
+      }
+      if (idFound && !nameFound) {
+        idOnlyCandidates.push(c);
+      } else if (!idFound && nameFound) {
+        nameOnlyCandidates.push(c);
+      }
+    }
+
+    const prioritizedForDeepVerify = idOnlyCandidates.concat(nameOnlyCandidates);
+    const deepVerifyTargets = prioritizedForDeepVerify.slice(0, MAX_DEEP_VERIFY_DOCS);
+
+    for (let i = MAX_DEEP_VERIFY_DOCS; i < prioritizedForDeepVerify.length; i += 1) {
+      prioritizedForDeepVerify[i].deepVerifySkipped = true;
+    }
 
     if (deepVerifyTargets.length > 0) {
       await Promise.allSettled(
         deepVerifyTargets.map(async (target) => {
           try {
-            const docText = await fetchTargetWithFallback(target.url, signal, fetchImpl);
+            const docText = await fetchTargetWithFallback(
+              target.url,
+              signal,
+              fetchImpl,
+              REQUEST_TIMEOUT_MS
+            );
             if (docText) {
-              target.bodyText = docText.slice(0, MAX_PAYLOAD_CHARS);
+              target.bodyText = stripQueryEchoes(docText.slice(0, MAX_PAYLOAD_CHARS));
             }
           } catch {
             // Ignore blocked upstream pages
@@ -1008,7 +1256,7 @@
       );
     }
 
-    // Grade all candidates and sort GENUINE first
+    // Grade all candidates strictly from verified text evidence and sort GENUINE first
     const findings = [];
     for (const candidate of candidatesList) {
       const evaluated = evaluateCandidateVerdict(candidate, studentId, studentName);
@@ -1306,6 +1554,52 @@
       }
     }
 
+    function renderFindingsToDom(findings) {
+      const genuineCount = findings.filter((f) => f.verdict === "GENUINE").length;
+      const falsePosCount = findings.filter((f) => f.verdict === "FALSE POSITIVE").length;
+
+      clearElementChildren(resultsSummary);
+      clearElementChildren(findingsContainer);
+
+      if (findings.length > 0) {
+        if (resultsSummary) {
+          appendBilingualText(
+            document,
+            resultsSummary,
+            "Found " +
+              String(findings.length) +
+              " public source(s): " +
+              String(genuineCount) +
+              " GENUINE exposure(s), " +
+              String(falsePosCount) +
+              " FALSE POSITIVE / partial match(es). Raw document excerpts are hidden to protect third-party privacy.",
+            "Tìm thấy " +
+              String(findings.length) +
+              " nguồn công khai: " +
+              String(genuineCount) +
+              " kết quả khớp chính xác (GENUINE), " +
+              String(falsePosCount) +
+              " kết quả khớp một phần (FALSE POSITIVE). Đoạn trích văn bản thô đã được ẩn để bảo vệ quyền riêng tư của bên thứ ba."
+          );
+        }
+        for (let i = 0; i < findings.length; i += 1) {
+          const rowEl = createFindingRowElement(document, findings[i], i);
+          findingsContainer.appendChild(rowEl);
+        }
+      } else if (resultsSummary) {
+        appendBilingualText(
+          document,
+          resultsSummary,
+          "0 matching public exposures found in checked indices. Remember: absence of results does not prove your data is not exposed.",
+          "0 kết quả lộ dữ liệu khớp trên các chỉ mục đã kiểm tra. Lưu ý: việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ."
+        );
+      }
+
+      if (emptyStatePanel) {
+        emptyStatePanel.hidden = !shouldShowEmptyStatePanel(findings);
+      }
+    }
+
     idInput.addEventListener("input", () => {
       setFieldError(idInput, idError, "", "");
       setGeneralError("", "");
@@ -1414,6 +1708,12 @@
             if (loadingStep) {
               loadingStep.textContent = msg;
             }
+          },
+          onPartialFindings: (partialFindings) => {
+            if (partialFindings && partialFindings.length > 0) {
+              if (resultsSection) resultsSection.hidden = false;
+              renderFindingsToDom(partialFindings);
+            }
           }
         });
 
@@ -1421,55 +1721,11 @@
         if (resultsSection) resultsSection.hidden = false;
 
         const findings = result.findings || [];
-        const genuineCount = findings.filter((f) => f.verdict === "GENUINE").length;
-        const falsePosCount = findings.filter((f) => f.verdict === "FALSE POSITIVE").length;
+        renderFindingsToDom(findings);
 
-        clearElementChildren(resultsSummary);
-
-        if (findings.length > 0) {
-          if (resultsSummary) {
-            appendBilingualText(
-              document,
-              resultsSummary,
-              "Found " +
-                String(findings.length) +
-                " public source(s): " +
-                String(genuineCount) +
-                " GENUINE exposure(s), " +
-                String(falsePosCount) +
-                " FALSE POSITIVE / partial match(es). Raw document excerpts are hidden to protect third-party privacy.",
-              "Tìm thấy " +
-                String(findings.length) +
-                " nguồn công khai: " +
-                String(genuineCount) +
-                " kết quả khớp chính xác (GENUINE), " +
-                String(falsePosCount) +
-                " kết quả khớp một phần (FALSE POSITIVE). Đoạn trích văn bản thô đã được ẩn để bảo vệ quyền riêng tư của bên thứ ba."
-            );
-          }
-          for (let i = 0; i < findings.length; i += 1) {
-            const rowEl = createFindingRowElement(document, findings[i], i);
-            findingsContainer.appendChild(rowEl);
-          }
-          if (genuineCount === 0 && emptyStatePanel) {
-            emptyStatePanel.hidden = false;
-          }
-        } else {
-          if (resultsSummary) {
-            appendBilingualText(
-              document,
-              resultsSummary,
-              "0 matching public exposures found in checked indices. Remember: absence of results does not prove your data is not exposed.",
-              "0 kết quả lộ dữ liệu khớp trên các chỉ mục đã kiểm tra. Lưu ý: việc không tìm thấy kết quả không chứng minh rằng dữ liệu của bạn chưa từng bị lộ."
-            );
-          }
-          if (emptyStatePanel) {
-            emptyStatePanel.hidden = false;
-          }
-          if (!result.anyNetworkSuccess && degradedPanel && manualLinksList) {
-            degradedPanel.hidden = false;
-            renderManualVerificationLinks(document, manualLinksList, validId, validName);
-          }
+        if (findings.length === 0 && !result.anyNetworkSuccess && degradedPanel && manualLinksList) {
+          degradedPanel.hidden = false;
+          renderManualVerificationLinks(document, manualLinksList, validId, validName);
         }
       } catch (err) {
         if (err && err.name === "AbortError") {
@@ -1522,9 +1778,13 @@
     containsNormalizedStudentName: containsNormalizedStudentName,
     evaluateCandidateVerdict: evaluateCandidateVerdict,
     getCanonicalDedupeKey: getCanonicalDedupeKey,
+    stripQueryEchoes: stripQueryEchoes,
     extractCandidatesFromResponse: extractCandidatesFromResponse,
     buildProxyGateways: buildProxyGateways,
+    buildScribdTrackUrls: buildScribdTrackUrls,
+    buildWebTrackUrls: buildWebTrackUrls,
     buildSearchEngineUrls: buildSearchEngineUrls,
+    shouldShowEmptyStatePanel: shouldShowEmptyStatePanel,
     runExposureSearch: runExposureSearch,
     applyUiLanguage: applyUiLanguage
   };

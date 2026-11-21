@@ -15,10 +15,12 @@ const app = require("./app.js");
 const PROJECT_DIR = __dirname;
 
 test("1. Input Validation: Student ID (`^\\d{10}$`) & Student Name rules (CWE-20)", () => {
-  // Valid 10-digit IDs
+  // Valid 10-digit IDs (including full-width Unicode digit normalization F5)
   assert.equal(app.validateStudentId("0000000000").valid, true);
   assert.equal(app.validateStudentId("  1234567890  ").valid, true);
   assert.equal(app.validateStudentId("  1234567890  ").value, "1234567890");
+  assert.equal(app.validateStudentId("１２３４５６７８９０").valid, true);
+  assert.equal(app.validateStudentId("１２３４５６７８９０").value, "1234567890");
 
   // Invalid Student IDs: empty, 9 digits, 11 digits, letters, XSS payload
   assert.equal(app.validateStudentId("").valid, false);
@@ -261,7 +263,28 @@ test("7. Static Security Audit: Zero Dangerous DOM Sinks (CWE-79), Strict CSP, R
       html.includes("./disclaimer.html"),
       pageName + " must link to ./disclaimer.html"
     );
+    assert.equal(
+      html.includes("corsproxy.io"),
+      false,
+      pageName + " CSP must not include unused corsproxy.io origin"
+    );
+    assert.equal(
+      html.includes("thingproxy.freeboard.io"),
+      false,
+      pageName + " CSP must not include unused thingproxy.freeboard.io origin"
+    );
   }
+
+  // F5 & S4: Student ID input must enforce maxlength="10" and use placeholder 0000000000
+  assert.ok(
+    indexHtml.includes('maxlength="10"'),
+    'index.html must enforce maxlength="10" on #student-id'
+  );
+  assert.equal(
+    indexHtml.includes("19537" + "42285"),
+    false,
+    "index.html must not contain real-looking student ID example"
+  );
 
   // Required user-facing strings in index.html & disclaimer.html
   assert.ok(
@@ -285,4 +308,141 @@ test("7. Static Security Audit: Zero Dangerous DOM Sinks (CWE-79), Strict CSP, R
   // Official OU Blue (#005BAC and #1956B3) in styles.css
   assert.ok(stylesCss.toUpperCase().includes("#005BAC"), "styles.css must define Official OU Blue #005BAC");
   assert.ok(stylesCss.toUpperCase().includes("#1956B3"), "styles.css must define Official OU Web Blue #1956B3");
+});
+
+test("8. Issue #11 Regressions: Zero Synthetic Verdicts, Query-Echo Stripping, NFD & Proximity Guards, Failover & Dedupe", async () => {
+  const testId = "1020304050";
+  const testName = "Trần Minh Khoa";
+
+  // 8.1 (F1): Scribd search page with zero matching text -> 0 findings (never auto-confirms confirmedId/confirmedName)
+  const zeroMatchOutcome = await app.runExposureSearch(testId, testName, {
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        '<html><body><a href="https://vi.scribd.com/document/900000001/Unrelated-Book">Unrelated Book</a><p>General academic syllabus with no student identifiers.</p></body></html>'
+    })
+  });
+  assert.equal(zeroMatchOutcome.anyNetworkSuccess, true);
+  assert.equal(zeroMatchOutcome.findings.length, 0);
+
+  // 8.2 (F4): Search page echoing the query string on unrelated docs -> 0 GENUINE findings
+  const echoedQueryOutcome = await app.runExposureSearch(testId, testName, {
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        '<html><head><title>Search results for "1020304050" "Trần Minh Khoa" | Scribd</title></head>' +
+        '<body><h1>Search results for "1020304050" "Trần Minh Khoa"</h1>' +
+        '<div class="results"><a href="https://vi.scribd.com/document/900000002/Calculus-Notes">Calculus Notes</a>' +
+        "<p>Integration by parts and differential equations study guide.</p></div></body></html>"
+    })
+  });
+  assert.equal(
+    echoedQueryOutcome.findings.filter((f) => f.verdict === "GENUINE").length,
+    0,
+    "Echoed search query header must never cause unrelated docs to be graded GENUINE"
+  );
+  assert.equal(echoedQueryOutcome.findings.length, 0);
+
+  // 8.3 (F2): Combined-query page containing only the Student ID without the name -> FALSE POSITIVE, never GENUINE
+  const idOnlyOutcome = await app.runExposureSearch(testId, testName, {
+    fetchImpl: async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        '<html><body><a href="https://ou.edu.vn/thong-bao-1020304050.pdf">Thong bao</a><p>Ma ho so: 1020304050 (khong co ten sinh vien).</p></body></html>'
+    })
+  });
+  assert.equal(idOnlyOutcome.findings.length, 1);
+  assert.equal(idOnlyOutcome.findings[0].verdict, "FALSE POSITIVE");
+  assert.equal(idOnlyOutcome.findings[0].hasId, true);
+  assert.equal(idOnlyOutcome.findings[0].hasName, false);
+
+  // 8.4 (F3): findings.length > 0 && genuineCount === 0 -> shouldShowEmptyStatePanel(findings) is false
+  assert.equal(app.shouldShowEmptyStatePanel(idOnlyOutcome.findings), false);
+  assert.equal(app.shouldShowEmptyStatePanel([]), true);
+
+  // 8.5 (F6): NFD-normalized Vietnamese name passes validateStudentName() & single-letter noise is rejected
+  const nfdName = "Nguyễn Văn Ánh".normalize("NFD");
+  const nfdValidation = app.validateStudentName(nfdName);
+  assert.equal(nfdValidation.valid, true);
+  assert.equal(nfdValidation.normalized, "nguyen van anh");
+  assert.equal(
+    app.containsNormalizedStudentName("the van nguyen a company policy handbook", "Nguyễn Văn A"),
+    false
+  );
+  assert.equal(
+    app.containsNormalizedStudentName("nguyen and van met a friend yesterday", "Nguyễn Văn A"),
+    false
+  );
+  assert.equal(
+    app.containsNormalizedStudentName("Danh sach: Nguyen Van A - Khoa CNTT", "Nguyễn Văn A"),
+    true
+  );
+
+  // 8.6 (S1, S2, P1/P2, P4): Gateway failover when r.jina.ai returns 403 on scribd.com/search, strict hostname suffix, & query param dedupe
+  let jinaCalls = 0;
+  let codetabsCalls = 0;
+  const failoverOutcome = await app.runExposureSearch(testId, testName, {
+    fetchImpl: async (requestUrl) => {
+      if (requestUrl.startsWith("https://r.jina.ai/")) {
+        jinaCalls += 1;
+        return {
+          ok: false,
+          status: 403,
+          text: async () => "Forbidden"
+        };
+      }
+      if (requestUrl.startsWith("https://api.codetabs.com/")) {
+        codetabsCalls += 1;
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            '<html><body><a href="https://vi.scribd.com/document/100000999/Roster-OU">Roster OU</a>' +
+            "<p>1020304050 - Trần Minh Khoa</p></body></html>"
+        };
+      }
+      return {
+        ok: false,
+        status: 503,
+        text: async () => "Unavailable"
+      };
+    }
+  });
+  assert.ok(jinaCalls > 0, "Primary Jina gateway should be attempted first");
+  assert.ok(codetabsCalls > 0, "CodeTabs fallback gateway must be attempted when Jina returns 403 on scribd.com/search");
+  assert.equal(failoverOutcome.anyNetworkSuccess, true);
+  assert.equal(failoverOutcome.findings.length, 1);
+  assert.equal(failoverOutcome.findings[0].verdict, "GENUINE");
+
+  // S1: Lookalike domain must not classify as Scribd or Studocu
+  assert.equal(
+    app.classifySource("https://evilscribd.com/document/1/x"),
+    "Public Web Source (evilscribd.com)"
+  );
+  assert.equal(
+    app.classifySource("https://fakestudocu.com/doc/1"),
+    "Public Web Source (fakestudocu.com)"
+  );
+  assert.equal(
+    app.classifySource("https://123docz.net/document/12345.htm"),
+    "123doc Document Repository (123docz.net)"
+  );
+
+  // P4: Non-Scribd URLs with different query strings must have distinct canonical dedupe keys
+  assert.notEqual(
+    app.getCanonicalDedupeKey("https://example.com/diem?id=1111"),
+    app.getCanonicalDedupeKey("https://example.com/diem?id=2222")
+  );
+
+  // P1/P2: Non-overlapping mirror offsets across parallel queries
+  const q0Mirrors = app.buildScribdTrackUrls("test", 0).map((e) => e.url);
+  const q1Mirrors = app.buildScribdTrackUrls("test", 1).map((e) => e.url);
+  const q2Mirrors = app.buildScribdTrackUrls("test", 2).map((e) => e.url);
+  for (const url of q0Mirrors) {
+    assert.equal(q1Mirrors.includes(url), false, "Query 0 and Query 1 Scribd mirrors must not overlap");
+    assert.equal(q2Mirrors.includes(url), false, "Query 0 and Query 2 Scribd mirrors must not overlap");
+  }
 });
