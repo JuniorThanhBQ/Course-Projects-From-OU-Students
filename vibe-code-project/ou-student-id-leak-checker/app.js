@@ -133,6 +133,19 @@
   }
 
   /**
+   * Collapses space-separated single-character glyph sequences produced by Scribd/PDF table extraction
+   * (e.g., `"2 3 5 1 0 5 0 1 6 4"` -> `"2351050164"`, `"V Ă N T R U N G T H À N H"` -> `"vantrungthanh"`).
+   */
+  function collapseSpacedGlyphs(normalizedStr) {
+    if (!normalizedStr) {
+      return "";
+    }
+    return normalizedStr
+      .replace(/\b(\d)(?:\s+(\d)){3,}\b/g, (m) => m.replace(/\s+/g, ""))
+      .replace(/\b([a-z])(?:\s+([a-z])){2,}\b/g, (m) => m.replace(/\s+/g, ""));
+  }
+
+  /**
    * Escapes RegExp special characters safely in linear time.
    */
   function escapeRegExp(str) {
@@ -428,6 +441,8 @@
 
   /**
    * Checks whether `rawText` contains the exact 10-digit Student ID bounded by non-digits.
+   * Also matches space-separated single-digit glyph sequences produced by Scribd/PDF table extraction
+   * (e.g. `"5 4 2 3 5 1 0 5 0 1 6 4"`, where a row index precedes the 10-digit Student ID).
    */
   function containsExactStudentId(rawText, studentId) {
     if (!rawText || !STUDENT_ID_REGEX.test(studentId)) {
@@ -435,12 +450,21 @@
     }
     const boundedText = String(rawText).slice(0, MAX_PAYLOAD_CHARS);
     const idPattern = new RegExp("(^|\\D)" + escapeRegExp(studentId) + "(\\D|$)");
-    return idPattern.test(boundedText);
+    if (idPattern.test(boundedText)) {
+      return true;
+    }
+    const spacedIdPattern = studentId
+      .split("")
+      .map((d) => escapeRegExp(d))
+      .join("[ \\t]+");
+    const spacedRegex = new RegExp("(^|\\D)" + spacedIdPattern + "(\\D|$)");
+    return spacedRegex.test(boundedText);
   }
 
   /**
    * Checks whether `rawText` contains the normalized Vietnamese student name.
-   * Supports full contiguous token sequence or close-proximity multi-token match (within 75 chars).
+   * Supports full contiguous token sequence, close-proximity multi-token match (within 75 chars),
+   * and space-separated single-character PDF/Scribd glyph sequences (e.g. `"V Ă N T R U N G T H À N H"`).
    */
   function containsNormalizedStudentName(rawText, rawOrNormalizedName) {
     if (!rawText || !rawOrNormalizedName) {
@@ -466,44 +490,61 @@
     // 2. For multi-token names (>= 2 words), check if all tokens appear within a 75-char proximity window
     const tokens = normalizedTarget.split(" ").filter(Boolean);
     if (tokens.length >= 2) {
+      let allTokensPresent = true;
       for (const token of tokens) {
         if (!hasBoundedPhrase(normalizedHaystack, token)) {
-          return false;
+          allTokensPresent = false;
+          break;
         }
       }
-      const firstToken = tokens[0];
-      let startIdx = normalizedHaystack.indexOf(firstToken);
-      while (startIdx !== -1) {
-        const windowSlice = normalizedHaystack.slice(
-          Math.max(0, startIdx - 35),
-          Math.min(normalizedHaystack.length, startIdx + normalizedTarget.length + 40)
-        );
-        const allInWindow = tokens.every((tk) => hasBoundedPhrase(windowSlice, tk));
-        if (allInWindow) {
-          // Guard against single-character initial noise (e.g. "a" in "Nguyen Van A"):
-          // Any 1-char token must appear immediately adjacent to its neighbouring name token in order.
-          let singleCharValid = true;
-          for (let idx = 0; idx < tokens.length; idx += 1) {
-            if (tokens[idx].length === 1) {
-              const matchesPrev =
-                idx > 0 && hasBoundedPhrase(windowSlice, tokens[idx - 1] + " " + tokens[idx]);
-              const matchesNext =
-                idx < tokens.length - 1 &&
-                hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens[idx + 1]);
-              const matchesReorderedGivenFirst =
-                idx === tokens.length - 1 &&
-                hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens.slice(0, idx).join(" "));
-              if (!matchesPrev && !matchesNext && !matchesReorderedGivenFirst) {
-                singleCharValid = false;
-                break;
+      if (allTokensPresent) {
+        const firstToken = tokens[0];
+        let startIdx = normalizedHaystack.indexOf(firstToken);
+        while (startIdx !== -1) {
+          const windowSlice = normalizedHaystack.slice(
+            Math.max(0, startIdx - 35),
+            Math.min(normalizedHaystack.length, startIdx + normalizedTarget.length + 40)
+          );
+          const allInWindow = tokens.every((tk) => hasBoundedPhrase(windowSlice, tk));
+          if (allInWindow) {
+            // Guard against single-character initial noise (e.g. "a" in "Nguyen Van A"):
+            // Any 1-char token must appear immediately adjacent to its neighbouring name token in order.
+            let singleCharValid = true;
+            for (let idx = 0; idx < tokens.length; idx += 1) {
+              if (tokens[idx].length === 1) {
+                const matchesPrev =
+                  idx > 0 && hasBoundedPhrase(windowSlice, tokens[idx - 1] + " " + tokens[idx]);
+                const matchesNext =
+                  idx < tokens.length - 1 &&
+                  hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens[idx + 1]);
+                const matchesReorderedGivenFirst =
+                  idx === tokens.length - 1 &&
+                  hasBoundedPhrase(windowSlice, tokens[idx] + " " + tokens.slice(0, idx).join(" "));
+                if (!matchesPrev && !matchesNext && !matchesReorderedGivenFirst) {
+                  singleCharValid = false;
+                  break;
+                }
               }
             }
+            if (singleCharValid) {
+              return true;
+            }
           }
-          if (singleCharValid) {
-            return true;
-          }
+          startIdx = normalizedHaystack.indexOf(firstToken, startIdx + 1);
         }
-        startIdx = normalizedHaystack.indexOf(firstToken, startIdx + 1);
+      }
+    }
+
+    // 3. Space-separated glyph sequence match (Scribd / PDF OCR table extraction where each letter is separated by a space)
+    if (tokens.length >= 2 || normalizedTarget.length >= 4) {
+      const spacedGlyphPattern = normalizedTarget
+        .replace(/\s+/g, "")
+        .split("")
+        .map((ch) => escapeRegExp(ch))
+        .join("\\s+");
+      const glyphRegex = new RegExp("(^|\\s)" + spacedGlyphPattern + "(\\s|$)");
+      if (glyphRegex.test(normalizedHaystack)) {
+        return true;
       }
     }
 
@@ -530,8 +571,12 @@
       cleanUrl
     ].join(" ");
 
-    const hasId = Boolean(candidate.confirmedId) || containsExactStudentId(combinedText, studentId);
-    const hasName = Boolean(candidate.confirmedName) || containsNormalizedStudentName(combinedText, studentName);
+    const hasId =
+      Boolean(candidate.confirmedId) ||
+      Boolean(candidate.scribdIndexedHit) ||
+      containsExactStudentId(combinedText, studentId);
+    const hasName =
+      Boolean(candidate.confirmedName) || containsNormalizedStudentName(combinedText, studentName);
 
     if (!hasId && !hasName) {
       return null;
@@ -990,10 +1035,16 @@
           if (payload) {
             anyGatewaySucceeded = true;
             trackSucceeded = true;
+            const hasExplicitScribdResultCount =
+              /\b\d+\s+results?\s+for\b/i.test(payload) ||
+              /\b\d+\s+kết\s+quả\s+cho\b/i.test(payload) ||
+              /\b\d+\s+resultados?\s+para\b/i.test(payload) ||
+              /\b\d+\s+hasil\s+untuk\b/i.test(payload);
             const parsed = extractCandidatesFromResponse(payload, { queryText: queryText });
             for (const item of parsed) {
               item.fromCombinedQuery = isCombinedIdAndNameQuery;
               item.fromIdOnlyQuery = isIdOnlyQuery;
+              item.scribdIndexedHit = hasExplicitScribdResultCount;
               item.track = "scribd";
               trackCandidates.push(item);
               collectedCandidates.push(item);
@@ -1129,11 +1180,15 @@
             url: cand.url,
             title: cand.title || "",
             snippet: cand.snippet || "",
-            bodyText: ""
+            bodyText: "",
+            scribdIndexedHit: Boolean(cand.scribdIndexedHit)
           });
         } else {
           existing.title = (existing.title + " " + (cand.title || "")).slice(0, 600);
           existing.snippet = (existing.snippet + " " + (cand.snippet || "")).slice(0, 2400);
+          if (cand.scribdIndexedHit) {
+            existing.scribdIndexedHit = true;
+          }
         }
       }
 
@@ -1194,6 +1249,7 @@
               snippet: cand.snippet || "",
               bodyText: "",
               fromCombinedQuery: Boolean(cand.fromCombinedQuery),
+              scribdIndexedHit: Boolean(cand.scribdIndexedHit),
               deepVerifySkipped: false
             });
           } else {
@@ -1205,15 +1261,22 @@
             if (cand.fromCombinedQuery) {
               existing.fromCombinedQuery = true;
             }
+            if (cand.scribdIndexedHit) {
+              existing.scribdIndexedHit = true;
+            }
           }
         }
       }
     }
 
-    // Deep document verification pass for candidates where ID or Name was not yet both confirmed in snippet
+    // Deep document verification pass for candidates where ID or Name was not yet both confirmed in snippet.
+    // Note: Scribd search cards show AI-generated document summaries rather than internal roster rows, so
+    // unconfirmed SERP candidates (where neither ID nor Name appeared in the short card summary) must also
+    // be deep-verified against their actual document text before grading.
     const candidatesList = Array.from(mergedByKey.values());
     const idOnlyCandidates = [];
     const nameOnlyCandidates = [];
+    const unconfirmedCandidates = [];
 
     for (const c of candidatesList) {
       const textSoFar = [c.title, c.snippet, c.url].join(" ");
@@ -1226,10 +1289,16 @@
         idOnlyCandidates.push(c);
       } else if (!idFound && nameFound) {
         nameOnlyCandidates.push(c);
+      } else {
+        unconfirmedCandidates.push(c);
       }
     }
 
-    const prioritizedForDeepVerify = idOnlyCandidates.concat(nameOnlyCandidates);
+    unconfirmedCandidates.sort((a, b) => Number(b.fromCombinedQuery) - Number(a.fromCombinedQuery));
+
+    const prioritizedForDeepVerify = idOnlyCandidates
+      .concat(nameOnlyCandidates)
+      .concat(unconfirmedCandidates);
     const deepVerifyTargets = prioritizedForDeepVerify.slice(0, MAX_DEEP_VERIFY_DOCS);
 
     for (let i = MAX_DEEP_VERIFY_DOCS; i < prioritizedForDeepVerify.length; i += 1) {

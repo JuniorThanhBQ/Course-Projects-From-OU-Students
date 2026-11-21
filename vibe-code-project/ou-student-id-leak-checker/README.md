@@ -56,6 +56,6 @@ vibe-code-project/ou-student-id-leak-checker/
 ## Live GitHub Pages Paths
 
 When deployed via GitHub Pages from the `main` branch root (`/`):
-- **Self-Check Tool:** `/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/` (`index.html`)
-- **Legal Disclaimer & Privacy Notice:** `/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/disclaimer.html`
-- **404 Fallback Page:** `/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/404.html`
+- **Self-Check Tool:** [`https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/`](https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/) (`index.html`)
+- **Legal Disclaimer & Privacy Notice:** [`https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/disclaimer.html`](https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/disclaimer.html)
+- **404 Fallback Page:** [`https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/404.html`](https://juniorthanhbq.github.io/Course-Projects-From-OU-Students/vibe-code-project/ou-student-id-leak-checker/404.html)
