@@ -1,0 +1,1003 @@
+/* ==========================================================================
+   OU Student ID & Name Exposure Self-Check Tool — Stylesheet
+   Brand Palette: Official Ho Chi Minh City Open University (OU) Signature Blue
+   - Primary OU Shield Blue: #005BAC (6.84:1 on #FFFFFF — WCAG AA/AAA)
+   - Official ou.edu.vn Web Header Blue: #1956B3 (6.81:1 on #FFFFFF — WCAG AA)
+   - Deep OU Academic Blue: #003E78 (10.45:1 on #FFFFFF — WCAG AAA)
+   Design Craft Floor: Impeccable v4.10.0 ("Paper and Instruments" Thesis)
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Official OU Signature Blue Palette */
+  --ou-blue-primary: #005BAC;
+  --ou-blue-web: #1956B3;
+  --ou-blue-deep: #003E78;
+  --ou-blue-tint: #EBF2FA;
+  --ou-blue-border: #B8D0EB;
+
+  /* Editorial Paper Surfaces (Flat paper, raised controls) */
+  --surface-paper: #F7F9FC;
+  --surface-sheet: #FFFFFF;
+  --surface-subtle: #EDF2F8;
+
+  /* Tinted Navy-Ink Hierarchy (WCAG AAA Verified — zero raw neutral gray) */
+  --ink-primary: #0B192C;
+  --ink-secondary: #2E435A;
+  --ink-muted: #4A607A;
+
+  /* Crisp 1px Ledger Hairlines */
+  --border-subtle: #D5E0EC;
+  --border-control: #8DA5BF;
+
+  /* Semantic Verdict & Alert Tokens (Full 1px border, zero side-tab bars) */
+  --genuine-bg: #FCECEB;
+  --genuine-border: #B83227;
+  --genuine-ink: #7F1B13;
+
+  --false-pos-bg: #FDF3E1;
+  --false-pos-border: #9E6208;
+  --false-pos-ink: #663D00;
+
+  /* Typography Stack (Zero external font network requests — CWE-829 compliant) */
+  --font-sans: "Be Vietnam Pro", "Segoe UI Variable Text", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", "JetBrains Mono", Consolas, monospace;
+
+  /* 4px Base Spacing Scale */
+  --sp-1: 0.25rem;  /* 4px */
+  --sp-2: 0.5rem;   /* 8px */
+  --sp-3: 0.75rem;  /* 12px */
+  --sp-4: 1rem;     /* 16px */
+  --sp-5: 1.25rem;  /* 20px */
+  --sp-6: 1.5rem;   /* 24px */
+  --sp-8: 2rem;     /* 32px */
+  --sp-10: 2.5rem;  /* 40px */
+
+  /* Tactile Instrument Radii & Subtle Physical Depth */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --shadow-instrument: 0 2px 6px rgba(11, 25, 44, 0.06);
+}
+
+/* Reset & Box Sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scrollbar-color: var(--border-control) var(--surface-paper);
+  scrollbar-width: thin;
+}
+
+/* Themed WebKit Scrollbars & Browser Surfaces */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-paper);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-control);
+  border-radius: 5px;
+  border: 2px solid var(--surface-paper);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ou-blue-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-paper);
+  color: var(--ink-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  caret-color: var(--ou-blue-primary);
+  overflow-x: hidden;
+}
+
+/* Themed Browser Selection & Focus States */
+::selection {
+  background-color: var(--ou-blue-primary);
+  color: #FFFFFF;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ou-blue-primary);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Skip Link for Keyboard Accessibility */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--sp-4);
+  z-index: 1000;
+  background-color: var(--ou-blue-deep);
+  color: #FFFFFF;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skip-link:focus {
+  top: var(--sp-3);
+}
+
+/* Layout Containers & Editorial Reading Measure (60ch–72ch max) */
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  padding-inline: var(--sp-4);
+}
+
+.content-column {
+  max-width: 760px;
+}
+
+/* Top-Frame Clickjacking Warning (CWE-1021) */
+.frame-warning {
+  background-color: var(--genuine-bg);
+  color: var(--genuine-ink);
+  border-bottom: 2px solid var(--genuine-border);
+  padding: var(--sp-4) 0;
+}
+
+.frame-warning-title {
+  margin: 0 0 var(--sp-1) 0;
+  font-weight: 700;
+}
+
+.frame-warning-body {
+  margin: 0;
+}
+
+/* Committed Shell Region — Official OU Blue Institutional Utility Masthead */
+.site-header {
+  background-color: var(--ou-blue-primary);
+  color: #FFFFFF;
+  border-bottom: 2px solid var(--ou-blue-deep);
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding-block: var(--sp-3);
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.ou-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background-color: #FFFFFF;
+  color: var(--ou-blue-primary);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.25;
+  color: #FFFFFF;
+}
+
+.brand-sub {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: #EBF2FA;
+}
+
+.header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease;
+}
+
+.nav-link:hover {
+  background-color: var(--ou-blue-web);
+}
+
+.nav-link:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.nav-link-active {
+  background-color: var(--ou-blue-deep);
+  border-color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+}
+
+/* Segmented Language Switcher Instrument (EN / VI — >= 44x44px touch targets) */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--ou-blue-deep);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--sp-1) var(--sp-3);
+  border: none;
+  border-radius: 3px;
+  background-color: transparent;
+  color: #EBF2FA;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.lang-btn:hover {
+  color: #FFFFFF;
+}
+
+.lang-btn[aria-pressed="true"] {
+  background-color: #FFFFFF;
+  color: var(--ou-blue-deep);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 1px;
+}
+
+/* Main Editorial Content Area */
+.main-content {
+  flex: 1;
+  padding-block: var(--sp-8) var(--sp-10);
+}
+
+/* Editorial Masthead & Typography Hierarchy (Zero eyebrow kickers) */
+.masthead-section {
+  padding-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.page-title {
+  margin: 0 0 var(--sp-3) 0;
+  font-size: clamp(1.625rem, 2.8vw, 2.125rem);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+  color: var(--ink-primary);
+  text-wrap: balance;
+}
+
+.lead-copy {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--ink-secondary);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+/* Section Headings (More space above than below, zero eyebrows) */
+.section-heading {
+  margin: var(--sp-8) 0 var(--sp-3) 0;
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
+}
+
+/* Inline Links */
+.inline-link {
+  color: var(--ou-blue-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.inline-link:hover {
+  color: var(--ou-blue-deep);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background-color: var(--surface-subtle);
+  color: var(--ink-primary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+}
+
+/* Editorial Scope & Transparency Ledger (Flat paper divided by 1px rules — no nested cards) */
+.scope-ledger {
+  padding-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ledger-dl {
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+  padding-block: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ledger-term {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ou-blue-deep);
+}
+
+.ledger-desc {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-secondary);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+/* Interactive Credential Verification Instrument (Elevation declared once: shadow only, zero ghost-card border) */
+.instrument-section {
+  padding-bottom: var(--sp-8);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.search-form {
+  background-color: var(--surface-sheet);
+  border-radius: var(--radius-md);
+  padding: var(--sp-6);
+  box-shadow: var(--shadow-instrument);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-5);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--ink-primary);
+  margin-bottom: var(--sp-1);
+}
+
+.field-hint {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 46px;
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-sans);
+  font-size: 1rem; /* >= 16px floor prevents iOS Safari auto-zoom */
+  color: var(--ink-primary);
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 2px rgba(11, 25, 44, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field-input::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
+}
+
+.field-input-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.field-input:focus {
+  border-color: var(--ou-blue-primary);
+  box-shadow: 0 0 0 3px rgba(0, 91, 172, 0.18);
+  outline: none;
+}
+
+.field-input[aria-invalid="true"] {
+  border-color: var(--genuine-border);
+  background-color: #FFFDFD;
+}
+
+.field-error {
+  margin: var(--sp-2) 0 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--genuine-bg);
+  border: 1px solid var(--genuine-border);
+  color: var(--genuine-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.general-error {
+  margin-top: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  background-color: var(--genuine-bg);
+  border: 1px solid var(--genuine-border);
+  color: var(--genuine-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* Tactile Instrument Buttons (>= 44x44px touch targets) */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 46px;
+  min-width: 46px;
+  padding: var(--sp-3) var(--sp-5);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.btn-primary {
+  background-color: var(--ou-blue-primary);
+  color: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0, 62, 120, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--ou-blue-deep);
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: var(--ou-blue-deep);
+  border-color: var(--ou-blue-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--ou-blue-tint);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--ink-secondary);
+  border-color: var(--border-subtle);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--surface-subtle);
+  color: var(--ink-primary);
+}
+
+/* Status & Progress Strip */
+.status-section {
+  padding-top: var(--sp-5);
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-sm);
+  background-color: var(--ou-blue-tint);
+  border: 1px solid var(--ou-blue-border);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2.5px solid var(--ou-blue-border);
+  border-top-color: var(--ou-blue-primary);
+  animation: ou-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ou-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--ou-blue-deep);
+}
+
+.status-detail {
+  margin: 2px 0 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-secondary);
+}
+
+/* Verification Results Ledger (Horizontal Hairline Ledger Rows — zero nested card bloat) */
+.results-section {
+  padding-bottom: var(--sp-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.results-header {
+  margin-bottom: var(--sp-4);
+}
+
+.results-summary {
+  margin: var(--sp-1) 0 0 0;
+  font-size: 0.9375rem;
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.findings-ledger {
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid var(--ink-primary);
+  background-color: var(--surface-sheet);
+  border-inline: 1px solid var(--border-subtle);
+}
+
+.finding-row {
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.finding-row-genuine {
+  background-color: #FFFDFD;
+}
+
+.finding-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.finding-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Verdict Badges ("Mono Means Machine" Rule — uppercase tracked monospace tags) */
+.verdict-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.verdict-genuine {
+  background-color: var(--genuine-bg);
+  border-color: var(--genuine-border);
+  color: var(--genuine-ink);
+}
+
+.verdict-false-positive {
+  background-color: var(--false-pos-bg);
+  border-color: var(--false-pos-border);
+  color: var(--false-pos-ink);
+}
+
+.matched-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--ink-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.finding-source-title {
+  margin: 0 0 var(--sp-1) 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+
+.finding-reason {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: 1rem;
+  color: var(--ink-secondary);
+  max-width: 68ch;
+}
+
+.finding-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.finding-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ou-blue-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-all;
+}
+
+.finding-link:hover {
+  color: var(--ou-blue-deep);
+}
+
+/* Empty State & Degraded State Panels (Full 1px border, zero side-tab bar) */
+.empty-state-panel {
+  background-color: var(--surface-sheet);
+  border: 1px solid var(--ou-blue-border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-5);
+  margin-top: var(--sp-4);
+}
+
+.empty-state-title {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ou-blue-deep);
+}
+
+.empty-state-body {
+  margin: 0 0 var(--sp-3) 0;
+  color: var(--ink-primary);
+}
+
+.empty-state-note {
+  margin: 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+}
+
+.degraded-panel {
+  background-color: var(--false-pos-bg);
+  border: 1px solid var(--false-pos-border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-5);
+  margin-top: var(--sp-4);
+}
+
+.degraded-title {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--false-pos-ink);
+}
+
+.degraded-body {
+  margin: 0 0 var(--sp-3) 0;
+  font-size: 1rem;
+  color: var(--ink-primary);
+  max-width: 68ch;
+}
+
+.manual-links-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Verdict Methodology Ledger */
+.methodology-section {
+  padding-bottom: var(--sp-4);
+}
+
+.methodology-ledger {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.method-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+  padding-block: var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.method-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.method-copy {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-secondary);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+/* Legal Disclaimer Ledger (`disclaimer.html` — Flat editorial rows instead of 9 boxed cards) */
+.legal-ledger {
+  margin-top: var(--sp-6);
+  border-top: 2px solid var(--ink-primary);
+}
+
+.legal-row {
+  padding-block: var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.clause-heading {
+  margin: 0 0 var(--sp-2) 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.clause-num {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ou-blue-primary);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.clause-body {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-secondary);
+  max-width: 68ch;
+  text-wrap: pretty;
+}
+
+.back-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+/* Site Footer */
+.site-footer {
+  background-color: var(--surface-sheet);
+  border-top: 1px solid var(--border-subtle);
+  padding-block: var(--sp-6);
+  margin-top: auto;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.footer-copy {
+  max-width: 540px;
+}
+
+.footer-primary {
+  margin: 0 0 var(--sp-1) 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-primary);
+}
+
+.footer-secondary {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-secondary);
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--sp-3);
+  color: var(--ou-blue-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer-link:hover {
+  color: var(--ou-blue-deep);
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 640px) {
+  .ledger-row {
+    grid-template-columns: 200px 1fr;
+    gap: var(--sp-4);
+    align-items: baseline;
+  }
+
+  .form-grid {
+    grid-template-columns: 260px 1fr;
+  }
+
+  .method-row {
+    grid-template-columns: 240px 1fr;
+    gap: var(--sp-4);
+    align-items: baseline;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-form {
+    padding: var(--sp-4);
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Motion Sensitivity (WCAG / Impeccable Harden) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .spinner {
+    animation: none;
+    border-color: var(--ou-blue-primary);
+  }
+
+  .btn,
+  .nav-link,
+  .lang-btn,
+  .field-input {
+    transition: none;
+  }
+}

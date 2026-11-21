@@ -1,0 +1,15 @@
+{
+  "name": "ou-student-exposure-self-check",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Privacy-first client-side Student ID & Name Exposure Self-Check Tool for Ho Chi Minh City Open University (OU) students.",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test app.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT"
+}

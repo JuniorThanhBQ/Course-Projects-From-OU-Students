@@ -1,0 +1,32 @@
+name: Vibe-Code Projects Automated Verification
+
+on:
+  push:
+    branches:
+      - main
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Node.js Unit & Security Suites
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify OU Student Exposure Self-Check Tool (vibe-code-project/ou-student-id-leak-checker)
+        run: npm --prefix vibe-code-project/ou-student-id-leak-checker test
+
+      - name: Verify HCMC OU A* & CH Route Planner (vibe-code-project/hcmc-ou-a-search)
+        run: npm --prefix vibe-code-project/hcmc-ou-a-search test
